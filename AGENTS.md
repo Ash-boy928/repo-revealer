@@ -8,3 +8,4 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+- backend/ holds the Telegram bot server split into ordered section files assembled by scripts/assemble.mjs; why: guarantees runtime identical to the original monolith while making sections editable.
