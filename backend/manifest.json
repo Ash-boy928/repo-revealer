@@ -1,312 +1,43 @@
 {
-  "originalSha256": "b903f5d2378efe3ff38afcb86d8aefb5dee8431464683cae648bd010a302eaab",
-  "originalBytes": 802364,
-  "modules": [
+  "id": "/",
+  "name": "Leo TeleBot",
+  "short_name": "TeleBot",
+  "description": "Leo TeleGm Bot - Telegram multi-account promoter, live monitor, and DM automation dashboard",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0c131d",
+  "theme_color": "#0e2340",
+  "prefer_related_applications": false,
+  "shortcuts": [
     {
-      "file": "01-bootstrap-imports.ts",
-      "section": "bootstrap-imports",
-      "fromLine": 1,
-      "toLine": 53
+      "name": "Dashboard",
+      "short_name": "Dashboard",
+      "description": "Open your automation dashboard",
+      "url": "/dashboard.html",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ],
+  "categories": ["business", "utilities", "productivity"],
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
     },
     {
-      "file": "02-sqlite-corruption-proof-database-engine.ts",
-      "section": "SQLITE CORRUPTION-PROOF DATABASE ENGINE (WAL MODE)",
-      "fromLine": 54,
-      "toLine": 254
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
     },
     {
-      "file": "03-non-blocking-debounced-async-file-writer.ts",
-      "section": "NON-BLOCKING DEBOUNCED ASYNC FILE WRITER",
-      "fromLine": 255,
-      "toLine": 298
-    },
-    {
-      "file": "04-universal-ai-engine-switching-architecture.ts",
-      "section": "UNIVERSAL AI ENGINE & SWITCHING ARCHITECTURE",
-      "fromLine": 299,
-      "toLine": 842
-    },
-    {
-      "file": "05-state.ts",
-      "section": "STATE",
-      "fromLine": 843,
-      "toLine": 889
-    },
-    {
-      "file": "06-telegram-api-rate-health-monitor-telemetry.ts",
-      "section": "TELEGRAM API RATE & HEALTH MONITOR TELEMETRY",
-      "fromLine": 890,
-      "toLine": 1030
-    },
-    {
-      "file": "07-security.ts",
-      "section": "SECURITY (HASHING)",
-      "fromLine": 1031,
-      "toLine": 1042
-    },
-    {
-      "file": "08-user-system.ts",
-      "section": "USER SYSTEM",
-      "fromLine": 1043,
-      "toLine": 1105
-    },
-    {
-      "file": "09-user-access-onboarding-requests.ts",
-      "section": "USER ACCESS & ONBOARDING REQUESTS",
-      "fromLine": 1106,
-      "toLine": 1499
-    },
-    {
-      "file": "10-live-bot-daily-accrual-billing-engine.ts",
-      "section": "LIVE BOT & DAILY ACCRUAL BILLING ENGINE",
-      "fromLine": 1500,
-      "toLine": 2097
-    },
-    {
-      "file": "11-global-api-key-pool.ts",
-      "section": "GLOBAL API KEY POOL (UNLIMITED SLOTS)",
-      "fromLine": 2098,
-      "toLine": 2215
-    },
-    {
-      "file": "12-account-helpers.ts",
-      "section": "ACCOUNT HELPERS",
-      "fromLine": 2216,
-      "toLine": 2927
-    },
-    {
-      "file": "13-two-queue-distributed-processing-architecture.ts",
-      "section": "TWO-QUEUE DISTRIBUTED PROCESSING ARCHITECTURE",
-      "fromLine": 2928,
-      "toLine": 3265
-    },
-    {
-      "file": "14-1-raw-staging-queue.ts",
-      "section": "1. RAW / STAGING QUEUE (From Scanners)",
-      "fromLine": 3266,
-      "toLine": 3440
-    },
-    {
-      "file": "15-2-verified-genuine-queue.ts",
-      "section": "2. VERIFIED / GENUINE QUEUE (Per-Account / Phone Architecture)",
-      "fromLine": 3441,
-      "toLine": 3995
-    },
-    {
-      "file": "16-daily-dm-history-tracking.ts",
-      "section": "DAILY DM HISTORY TRACKING (LAST 5 DAYS PER USER)",
-      "fromLine": 3996,
-      "toLine": 4090
-    },
-    {
-      "file": "17-daily-join-request-history-tracked-invite-links.ts",
-      "section": "DAILY JOIN REQUEST HISTORY & TRACKED INVITE LINKS",
-      "fromLine": 4091,
-      "toLine": 4663
-    },
-    {
-      "file": "18-midnight-12-00-am-expiry-automations.ts",
-      "section": "MIDNIGHT 12:00 AM & EXPIRY AUTOMATIONS",
-      "fromLine": 4664,
-      "toLine": 5073
-    },
-    {
-      "file": "19-auto-delete-personal-chats-older-than-1-day.ts",
-      "section": "AUTO-DELETE PERSONAL CHATS OLDER THAN 1 DAY (24 HOURS)",
-      "fromLine": 5074,
-      "toLine": 5470
-    },
-    {
-      "file": "20-server-sent-events-engine.ts",
-      "section": "SERVER-SENT EVENTS (SSE) ENGINE",
-      "fromLine": 5471,
-      "toLine": 5573
-    },
-    {
-      "file": "21-contact-lock-helper.ts",
-      "section": "CONTACT LOCK HELPER",
-      "fromLine": 5574,
-      "toLine": 5690
-    },
-    {
-      "file": "22-expired-hash-auto-recovery-helper.ts",
-      "section": "EXPIRED HASH AUTO-RECOVERY HELPER",
-      "fromLine": 5691,
-      "toLine": 5780
-    },
-    {
-      "file": "23-peer-resolution-forcing-helper.ts",
-      "section": "PEER RESOLUTION & FORCING HELPER",
-      "fromLine": 5781,
-      "toLine": 5983
-    },
-    {
-      "file": "24-live-stream-peer-healing-refresh-helper.ts",
-      "section": "LIVE STREAM PEER HEALING & REFRESH HELPER",
-      "fromLine": 5984,
-      "toLine": 8479
-    },
-    {
-      "file": "25-app-setup.ts",
-      "section": "APP SETUP",
-      "fromLine": 8480,
-      "toLine": 8635
-    },
-    {
-      "file": "26-token-session-utils.ts",
-      "section": "TOKEN & SESSION UTILS",
-      "fromLine": 8636,
-      "toLine": 8828
-    },
-    {
-      "file": "27-routes.ts",
-      "section": "ROUTES",
-      "fromLine": 8829,
-      "toLine": 9038
-    },
-    {
-      "file": "28-telegram-mini-app-hmac-sha256-verification.ts",
-      "section": "TELEGRAM MINI APP (TMA) HMAC-SHA256 VERIFICATION",
-      "fromLine": 9039,
-      "toLine": 9090
-    },
-    {
-      "file": "29-telegram-mini-app-auto-authentication.ts",
-      "section": "TELEGRAM MINI APP (TMA) AUTO-AUTHENTICATION",
-      "fromLine": 9091,
-      "toLine": 9245
-    },
-    {
-      "file": "30-dashboard-apis.ts",
-      "section": "DASHBOARD APIS",
-      "fromLine": 9246,
-      "toLine": 10974
-    },
-    {
-      "file": "31-user-bulk-actions.ts",
-      "section": "USER BULK ACTIONS (All Start, All Stop, All DM, All Live)",
-      "fromLine": 10975,
-      "toLine": 11100
-    },
-    {
-      "file": "32-admin-global-bulk-actions.ts",
-      "section": "ADMIN GLOBAL BULK ACTIONS",
-      "fromLine": 11101,
-      "toLine": 11240
-    },
-    {
-      "file": "33-forgot-password.ts",
-      "section": "FORGOT PASSWORD",
-      "fromLine": 11241,
-      "toLine": 11274
-    },
-    {
-      "file": "34-bulk-bot-generator-vault-engine.ts",
-      "section": "BULK BOT GENERATOR & VAULT ENGINE",
-      "fromLine": 11275,
-      "toLine": 11697
-    },
-    {
-      "file": "35-admin-panel-apis.ts",
-      "section": "ADMIN PANEL APIS",
-      "fromLine": 11698,
-      "toLine": 11931
-    },
-    {
-      "file": "36-channel-bot-reactions-engine.ts",
-      "section": "CHANNEL BOT REACTIONS ENGINE",
-      "fromLine": 11932,
-      "toLine": 13053
-    },
-    {
-      "file": "37-join-request-tracker-admin-controls.ts",
-      "section": "JOIN REQUEST TRACKER ADMIN CONTROLS",
-      "fromLine": 13054,
-      "toLine": 13078
-    },
-    {
-      "file": "38-residential-proxy-gateway-admin-endpoints.ts",
-      "section": "RESIDENTIAL PROXY GATEWAY ADMIN ENDPOINTS",
-      "fromLine": 13079,
-      "toLine": 13990
-    },
-    {
-      "file": "39-admin-account-slot-approval-management.ts",
-      "section": "ADMIN ACCOUNT SLOT & APPROVAL MANAGEMENT",
-      "fromLine": 13991,
-      "toLine": 14086
-    },
-    {
-      "file": "40-admin-customer-access-onboarding-requests.ts",
-      "section": "ADMIN CUSTOMER ACCESS / ONBOARDING REQUESTS",
-      "fromLine": 14087,
-      "toLine": 14407
-    },
-    {
-      "file": "41-admin-queue-management-apis.ts",
-      "section": "ADMIN QUEUE MANAGEMENT APIS",
-      "fromLine": 14408,
-      "toLine": 14951
-    },
-    {
-      "file": "42-smart-khatabook-billing-rest-api.ts",
-      "section": "SMART KHATABOOK & BILLING REST API",
-      "fromLine": 14952,
-      "toLine": 14953
-    },
-    {
-      "file": "43-demo-user-management-api.ts",
-      "section": "DEMO USER MANAGEMENT API",
-      "fromLine": 14954,
-      "toLine": 15313
-    },
-    {
-      "file": "44-overdue-freeze-manual-pause-control.ts",
-      "section": "OVERDUE FREEZE & MANUAL PAUSE CONTROL",
-      "fromLine": 15314,
-      "toLine": 16019
-    },
-    {
-      "file": "45-admin-telegram-api-rate-health-monitor.ts",
-      "section": "ADMIN TELEGRAM API RATE & HEALTH MONITOR",
-      "fromLine": 16020,
-      "toLine": 16136
-    },
-    {
-      "file": "46-global-api-pool-admin-endpoints.ts",
-      "section": "GLOBAL API POOL (UNLIMITED KEYS) ADMIN ENDPOINTS",
-      "fromLine": 16137,
-      "toLine": 16257
-    },
-    {
-      "file": "47-universal-ai-settings-provider-switching-endpoints.ts",
-      "section": "UNIVERSAL AI SETTINGS & PROVIDER SWITCHING ENDPOINTS",
-      "fromLine": 16258,
-      "toLine": 16909
-    },
-    {
-      "file": "48-telegram-interactive-bot-engine.ts",
-      "section": "TELEGRAM INTERACTIVE BOT ENGINE (USER & ADMIN)",
-      "fromLine": 16910,
-      "toLine": 17434
-    },
-    {
-      "file": "49-telegram-customer-bill-billing-statement.ts",
-      "section": "TELEGRAM CUSTOMER /bill & BILLING STATEMENT",
-      "fromLine": 17435,
-      "toLine": 17530
-    },
-    {
-      "file": "50-telegram-customer-onboarding-bot-flow.ts",
-      "section": "TELEGRAM CUSTOMER ONBOARDING BOT FLOW",
-      "fromLine": 17531,
-      "toLine": 19936
-    },
-    {
-      "file": "51-start-server.ts",
-      "section": "START SERVER",
-      "fromLine": 19937,
-      "toLine": 19981
+      "src": "/icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ]
 }

@@ -1,0 +1,211 @@
+name: Build LeoTeleBot Android APK
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build-apk:
+    name: Build LeoTeleBot APK
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.3'
+          channel: 'stable'
+
+      - name: Install Image Utilities
+        run: |
+          sudo apt-get update || true
+          sudo apt-get install -y imagemagick || true
+
+      - name: Create Clean Project
+        run: |
+          # 1. Create a pristine Flutter Android project named leotelebot_app
+          flutter create --project-name leotelebot_app --platforms=android --org com.leotelebot.app telebot_android_build
+          
+          # 2. Inject LeoTeleBot Code & Dependencies
+          rm -rf telebot_android_build/lib/*
+          cp -r flutter_telebot/lib/* telebot_android_build/lib/
+          cp flutter_telebot/pubspec.yaml telebot_android_build/pubspec.yaml
+
+          # 3. Inject Assets (App Logo & Icons)
+          mkdir -p telebot_android_build/assets
+          if [ -d "flutter_telebot/assets" ]; then
+            cp -r flutter_telebot/assets/* telebot_android_build/assets/
+          fi
+
+          # 4. Set Official App Name to 'LeoTeleBot' in AndroidManifest.xml
+          sed -i 's/android:label=".*"/android:label="LeoTeleBot"/g' telebot_android_build/android/app/src/main/AndroidManifest.xml || true
+
+          # 5. Enable 120Hz Hardware Acceleration, Large Heap, Cleartext & 24/7 Background WakeLock permissions
+          sed -i 's/<application/<application android:hardwareAccelerated="true" android:largeHeap="true" android:usesCleartextTraffic="true"/g' telebot_android_build/android/app/src/main/AndroidManifest.xml || true
+          sed -i '/<manifest/a \    <uses-permission android:name="android.permission.INTERNET"\/>\n    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"\/>\n    <uses-permission android:name="android.permission.WAKE_LOCK"\/>\n    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS"\/>\n    <queries>\n        <intent>\n            <action android:name="android.intent.action.VIEW"\/>\n            <data android:scheme="https"\/>\n        <\/intent>\n        <intent>\n            <action android:name="android.intent.action.VIEW"\/>\n            <data android:scheme="tg"\/>\n        <\/intent>\n        <package android:name="org.telegram.messenger"\/>\n        <package android:name="org.telegram.messenger.web"\/>\n        <package android:name="org.thunderdog.challegram"\/>\n    <\/queries>' telebot_android_build/android/app/src/main/AndroidManifest.xml || true
+
+          # 6. Dynamically Find and Inject 1-Tap Battery Channel into Exact MainActivity.kt
+          MAIN_ACTIVITY=$(find telebot_android_build/android/app/src/main -name "MainActivity.kt" | head -n 1)
+          echo "Found MainActivity at: $MAIN_ACTIVITY"
+          PACKAGE_LINE=$(grep "package " "$MAIN_ACTIVITY" | head -n 1)
+          
+          cat << 'EOF' > "$MAIN_ACTIVITY"
+          PACKAGE_LINE_REPLACE
+
+          import android.content.Intent
+          import android.net.Uri
+          import android.os.Build
+          import android.os.PowerManager
+          import android.provider.Settings
+          import io.flutter.embedding.android.FlutterActivity
+          import io.flutter.embedding.engine.FlutterEngine
+          import io.flutter.plugin.common.MethodChannel
+
+          class MainActivity: FlutterActivity() {
+              private val CHANNEL = "com.leotelebot.app/battery"
+
+              override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
+                  super.configureFlutterEngine(flutterEngine)
+                  MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL).setMethodCallHandler { call, result ->
+                      if (call.method == "requestIgnoreBatteryOptimizations") {
+                          try {
+                              if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                                  val packageName = packageName
+                                  val pm = getSystemService(POWER_SERVICE) as PowerManager
+                                  if (!pm.isIgnoringBatteryOptimizations(packageName)) {
+                                      try {
+                                          val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
+                                              data = Uri.parse("package:$packageName")
+                                          }
+                                          startActivity(intent)
+                                          result.success(true)
+                                      } catch (e: Exception) {
+                                          val fallbackIntent = Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
+                                          startActivity(fallbackIntent)
+                                          result.success(true)
+                                      }
+                                  } else {
+                                      result.success(false)
+                                  }
+                              } else {
+                                  result.success(false)
+                              }
+                          } catch (e: Exception) {
+                              result.error("ERROR", e.message, null)
+                          }
+                      } else if (call.method == "openUrl") {
+                          val targetUrl = call.argument<String>("url")
+                          if (targetUrl != null) {
+                              try {
+                                  val intent = Intent(Intent.ACTION_VIEW, Uri.parse(targetUrl)).apply {
+                                      flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                                  }
+                                  startActivity(intent)
+                                  result.success(true)
+                              } catch (e: Exception) {
+                                  try {
+                                      val chooser = Intent.createChooser(Intent(Intent.ACTION_VIEW, Uri.parse(targetUrl)), "Open with").apply {
+                                          flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                                      }
+                                      startActivity(chooser)
+                                      result.success(true)
+                                  } catch (e2: Exception) {
+                                      result.error("ERROR", e2.message, null)
+                                  }
+                              }
+                          } else {
+                              result.error("ERROR", "URL is null", null)
+                          }
+                      } else {
+                          result.notImplemented()
+                      }
+                  }
+              }
+          }
+          EOF
+          sed -i "s|PACKAGE_LINE_REPLACE|$PACKAGE_LINE|g" "$MAIN_ACTIVITY"
+          echo "Successfully injected MethodChannel into: $MAIN_ACTIVITY"
+
+          # 7. CRITICAL FIX FOR APP ICON: Remove adaptive icon xml that overrides png on Android 8+
+          rm -rf telebot_android_build/android/app/src/main/res/mipmap-anydpi-v26 || true
+
+          # 8. Locate Custom Robot Logo
+          LOGO_SRC=""
+          if [ -f "flutter_telebot/assets/app_icon.png" ]; then
+            LOGO_SRC="flutter_telebot/assets/app_icon.png"
+          elif [ -f "flutter_telebot/logo.png" ]; then
+            LOGO_SRC="flutter_telebot/logo.png"
+          else
+            FOUND_FILE=$(find flutter_telebot -maxdepth 2 -name "*.png" | head -n 1)
+            if [ -n "$FOUND_FILE" ]; then
+              LOGO_SRC="$FOUND_FILE"
+            fi
+          fi
+
+          if [ -n "$LOGO_SRC" ]; then
+            echo "Generating Android launcher icons from: $LOGO_SRC"
+            
+            mkdir -p telebot_android_build/android/app/src/main/res/mipmap-mdpi
+            mkdir -p telebot_android_build/android/app/src/main/res/mipmap-hdpi
+            mkdir -p telebot_android_build/android/app/src/main/res/mipmap-xhdpi
+            mkdir -p telebot_android_build/android/app/src/main/res/mipmap-xxhdpi
+            mkdir -p telebot_android_build/android/app/src/main/res/mipmap-xxxhdpi
+            mkdir -p telebot_android_build/android/app/src/main/res/drawable
+
+            if command -v convert >/dev/null 2>&1; then
+              echo "ImageMagick found! Resizing icons..."
+              convert "$LOGO_SRC" -crop 920x920+20+50 -resize 192x192 square_logo.png 2>/dev/null || convert "$LOGO_SRC" -resize 192x192 square_logo.png 2>/dev/null || cp "$LOGO_SRC" square_logo.png
+              convert square_logo.png -resize 48x48 telebot_android_build/android/app/src/main/res/mipmap-mdpi/ic_launcher.png 2>/dev/null || cp "$LOGO_SRC" telebot_android_build/android/app/src/main/res/mipmap-mdpi/ic_launcher.png
+              convert square_logo.png -resize 72x72 telebot_android_build/android/app/src/main/res/mipmap-hdpi/ic_launcher.png 2>/dev/null || cp "$LOGO_SRC" telebot_android_build/android/app/src/main/res/mipmap-hdpi/ic_launcher.png
+              convert square_logo.png -resize 96x96 telebot_android_build/android/app/src/main/res/mipmap-xhdpi/ic_launcher.png 2>/dev/null || cp "$LOGO_SRC" telebot_android_build/android/app/src/main/res/mipmap-xhdpi/ic_launcher.png
+              convert square_logo.png -resize 144x144 telebot_android_build/android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png 2>/dev/null || cp "$LOGO_SRC" telebot_android_build/android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png
+              convert square_logo.png -resize 192x192 telebot_android_build/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png 2>/dev/null || cp "$LOGO_SRC" telebot_android_build/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
+              cp square_logo.png telebot_android_build/android/app/src/main/res/drawable/ic_launcher.png || true
+            else
+              echo "ImageMagick not available, using direct icon copy fallback..."
+              cp "$LOGO_SRC" telebot_android_build/android/app/src/main/res/mipmap-mdpi/ic_launcher.png
+              cp "$LOGO_SRC" telebot_android_build/android/app/src/main/res/mipmap-hdpi/ic_launcher.png
+              cp "$LOGO_SRC" telebot_android_build/android/app/src/main/res/mipmap-xhdpi/ic_launcher.png
+              cp "$LOGO_SRC" telebot_android_build/android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png
+              cp "$LOGO_SRC" telebot_android_build/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
+              cp "$LOGO_SRC" telebot_android_build/android/app/src/main/res/drawable/ic_launcher.png || true
+            fi
+            
+            echo "✅ Android launcher icons successfully configured!"
+          else
+            echo "⚠️ No custom logo found, keeping default Flutter icon."
+          fi
+
+      - name: Compile Direct APK
+        run: |
+          cd telebot_android_build
+          
+          # Accept Android licenses
+          yes | flutter doctor --android-licenses || true
+          
+          # Fetch packages
+          flutter pub get
+          
+          # Build APK
+          flutter build apk --debug
+          
+          # Copy APK to output folder
+          mkdir -p ../dist_apk
+          cp build/app/outputs/flutter-apk/app-debug.apk ../dist_apk/LeoTeleBot.apk
+
+      - name: Upload LeoTeleBot APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: LeoTeleBot-Android-APK
+          path: dist_apk/LeoTeleBot.apk
+          if-no-files-found: error
+          retention-days: 30

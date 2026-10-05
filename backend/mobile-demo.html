@@ -1,0 +1,1536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>TeleBot Mobile App Architecture &amp; UI Kit Demo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #090e17;
+      --accent: #ff5722; /* Reference Coral Orange */
+      --accent-hover: #f4511e;
+      --plum-dark: #270c20; /* Reference Deep Plum Header */
+      --plum-card: #38122e;
+      --sheet-bg: #ffffff; /* Reference Curved White Sheet */
+      --sheet-card: #f8fafc;
+      --sheet-text: #0f172a;
+      --sheet-sub: #64748b;
+      --border-color: rgba(148, 163, 184, 0.2);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; -webkit-tap-highlight-color: transparent; }
+    body {
+      background: radial-gradient(circle at 50% 10%, #161a29 0%, #060911 100%);
+      color: #f1f5f9;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 16px 14px 60px;
+      overflow-x: hidden;
+    }
+
+    /* Top Navigation Header */
+    .top-banner {
+      max-width: 1240px;
+      width: 100%;
+      background: linear-gradient(135deg, rgba(39, 12, 32, 0.6), rgba(15, 23, 42, 0.85));
+      border: 1px solid rgba(255, 87, 34, 0.35);
+      border-radius: 18px;
+      padding: 16px 22px;
+      margin-bottom: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 14px;
+      box-shadow: 0 10px 35px rgba(0,0,0,0.5), 0 0 20px rgba(255, 87, 34, 0.15);
+    }
+    .top-title h1 {
+      font-size: 21px;
+      font-weight: 900;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .top-title h1 span.pill {
+      font-size: 11.5px;
+      background: #ff5722;
+      color: #fff;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+    }
+    .top-title p {
+      font-size: 13px;
+      color: #94a3b8;
+      margin-top: 3px;
+    }
+    .top-controls {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .top-btn {
+      padding: 8px 16px;
+      border-radius: 10px;
+      font-size: 12.5px;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.2s;
+      border: 1px solid transparent;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .top-btn-accent {
+      background: #ff5722;
+      color: #fff;
+      border-color: #ff5722;
+    }
+    .top-btn-accent:hover { background: #f4511e; }
+    .top-btn-ghost {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(255, 255, 255, 0.2);
+      color: #e2e8f0;
+    }
+    .top-btn-ghost:hover { background: rgba(255, 255, 255, 0.16); color: #fff; }
+
+    /* View Mode Switcher Tab Bar */
+    .view-mode-bar {
+      max-width: 1240px;
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 22px;
+      background: rgba(15, 23, 42, 0.75);
+      border: 1px solid rgba(148, 163, 184, 0.18);
+      border-radius: 14px;
+      padding: 8px 12px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .mode-pills {
+      display: flex;
+      gap: 6px;
+    }
+    .mode-pill {
+      padding: 8px 16px;
+      border-radius: 10px;
+      font-size: 12.5px;
+      font-weight: 700;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all 0.2s;
+      background: transparent;
+      color: #94a3b8;
+    }
+    .mode-pill.active {
+      background: #ff5722;
+      color: #fff;
+      box-shadow: 0 4px 14px rgba(255, 87, 34, 0.4);
+    }
+    .theme-selector-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .theme-chip {
+      padding: 5px 10px;
+      border-radius: 8px;
+      font-size: 11.5px;
+      font-weight: 700;
+      cursor: pointer;
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      background: rgba(2, 6, 23, 0.6);
+      color: #cbd5e1;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .theme-chip.active {
+      border-color: #ff5722;
+      color: #ff5722;
+      background: rgba(255, 87, 34, 0.1);
+    }
+
+    /* ================= MAIN CONTAINER ================= */
+    .view-container {
+      max-width: 1240px;
+      width: 100%;
+    }
+
+    /* ================= MODE 1: SINGLE INTERACTIVE PHONE ================= */
+    .single-mode-grid {
+      display: grid;
+      grid-template-columns: 410px 1fr;
+      gap: 32px;
+      align-items: start;
+    }
+    @media (max-width: 960px) {
+      .single-mode-grid {
+        grid-template-columns: 1fr;
+        justify-items: center;
+      }
+    }
+
+    /* Phone Shell */
+    .phone-mockup {
+      width: 100%;
+      max-width: 390px;
+      height: 790px;
+      background: #000;
+      border-radius: 46px;
+      border: 4px solid #334155;
+      box-shadow: 0 0 0 2px #0f172a, 0 24px 60px rgba(0,0,0,0.9), 0 0 40px rgba(255, 87, 34, 0.2);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Notch */
+    .phone-notch {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 110px;
+      height: 24px;
+      background: #000;
+      border-radius: 20px;
+      z-index: 60;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .notch-camera { width: 10px; height: 10px; background: #0f172a; border-radius: 50%; border: 1px solid #1e293b; }
+    .notch-speaker { width: 36px; height: 4px; background: #1e293b; border-radius: 2px; }
+
+    /* Status Bar */
+    .phone-status-bar {
+      height: 40px;
+      padding: 10px 22px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      font-weight: 700;
+      color: #fff;
+      z-index: 50;
+      background: transparent;
+    }
+
+    /* Screen Body Container */
+    .screen-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+      background: var(--plum-dark);
+    }
+
+    /* Reference Style Header */
+    .screen-header {
+      padding: 10px 18px 20px;
+      background: var(--plum-dark);
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .screen-header-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .header-user-info h2 {
+      font-size: 17px;
+      font-weight: 800;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .header-user-info p {
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.7);
+      margin-top: 1px;
+    }
+    .header-badge {
+      font-size: 11px;
+      font-weight: 800;
+      background: #ff5722;
+      color: #fff;
+      padding: 4px 10px;
+      border-radius: 20px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    /* Reference Header Quick Summary / Segmented Tab in Header */
+    .header-segment-row {
+      display: flex;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 3px;
+      gap: 4px;
+    }
+    .header-seg-btn {
+      flex: 1;
+      text-align: center;
+      padding: 6px 8px;
+      border-radius: 9px;
+      font-size: 11.5px;
+      font-weight: 700;
+      color: rgba(255, 255, 255, 0.75);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .header-seg-btn.active {
+      background: #ff5722;
+      color: #fff;
+      box-shadow: 0 2px 8px rgba(255, 87, 34, 0.4);
+    }
+
+    /* Reference Curved Bottom Sheet */
+    .curved-sheet {
+      flex: 1;
+      background: var(--sheet-bg);
+      border-radius: 28px 28px 0 0;
+      padding: 18px 16px 70px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      position: relative;
+      box-shadow: 0 -8px 24px rgba(0,0,0,0.15);
+    }
+    .curved-sheet::-webkit-scrollbar { display: none; }
+
+    /* Persistent Bottom Navigation Bar (Exact Reference Match) */
+    .bottom-navbar {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 64px;
+      background: #ffffff;
+      border-top: 1px solid rgba(226, 232, 240, 0.8);
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      padding: 0 10px 10px;
+      z-index: 40;
+      box-shadow: 0 -4px 16px rgba(0,0,0,0.06);
+    }
+    .nav-tab-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      color: #94a3b8;
+      cursor: pointer;
+      transition: all 0.2s;
+      padding: 6px 10px;
+      border-radius: 12px;
+      position: relative;
+    }
+    .nav-tab-item.active {
+      color: #ff5722;
+    }
+    .nav-tab-item .nav-icon {
+      font-size: 19px;
+      line-height: 1;
+    }
+    .nav-tab-item .nav-label {
+      font-size: 10px;
+      font-weight: 700;
+    }
+    .nav-tab-item.active::after {
+      content: '';
+      position: absolute;
+      bottom: 0px;
+      width: 14px;
+      height: 3px;
+      background: #ff5722;
+      border-radius: 3px;
+    }
+
+    /* Screen Cards & Lists */
+    /* 1. Account Card (Reference Screen 6 Style) */
+    .account-card-item {
+      background: #ffffff;
+      border: 1.5px solid #f1f5f9;
+      border-radius: 18px;
+      padding: 13px 14px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.04);
+      transition: all 0.2s;
+    }
+    .account-card-item:hover {
+      border-color: #ff5722;
+      box-shadow: 0 4px 14px rgba(255, 87, 34, 0.12);
+    }
+    .acc-icon-box {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      background: rgba(255, 87, 34, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      flex-shrink: 0;
+      color: #ff5722;
+    }
+    .acc-details {
+      flex: 1;
+      min-width: 0;
+    }
+    .acc-name-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .acc-title {
+      font-size: 13.5px;
+      font-weight: 800;
+      color: #0f172a;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .acc-status-tag {
+      font-size: 10px;
+      font-weight: 800;
+      padding: 2px 7px;
+      border-radius: 6px;
+      text-transform: uppercase;
+    }
+    .tag-online { background: #dcfce7; color: #15803d; }
+    .tag-standby { background: #f1f5f9; color: #64748b; }
+    .acc-sub-info {
+      font-size: 11px;
+      color: #64748b;
+      margin-top: 3px;
+      display: flex;
+      gap: 8px;
+    }
+    .acc-sub-info span b { color: #ff5722; font-family: 'JetBrains Mono', monospace; }
+
+    /* Toggle Switch */
+    .mini-switch {
+      width: 38px;
+      height: 22px;
+      background: #e2e8f0;
+      border-radius: 20px;
+      padding: 2px;
+      cursor: pointer;
+      position: relative;
+      transition: all 0.2s;
+    }
+    .mini-switch.active { background: #22c55e; }
+    .mini-thumb {
+      width: 18px;
+      height: 18px;
+      background: #fff;
+      border-radius: 50%;
+      transition: all 0.2s;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    }
+    .mini-switch.active .mini-thumb { transform: translateX(16px); }
+
+    /* 2. Live Radar Screen (Reference Screen 7 Style) */
+    .radar-canvas-card {
+      background: linear-gradient(145deg, #1c0919, #2b0c24);
+      border-radius: 18px;
+      padding: 16px;
+      color: #fff;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+      margin-bottom: 6px;
+    }
+    .radar-circle-outer {
+      width: 140px;
+      height: 140px;
+      border: 1.5px dashed rgba(255, 87, 34, 0.4);
+      border-radius: 50%;
+      margin: 8px auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      animation: radarSpin 8s linear infinite;
+    }
+    @keyframes radarSpin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    .radar-ping-dot {
+      width: 12px;
+      height: 12px;
+      background: #ff5722;
+      border-radius: 50%;
+      box-shadow: 0 0 12px #ff5722;
+    }
+    .live-target-pill {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 14px;
+      padding: 10px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    /* 3. Analytics / Calendar Screen (Reference Screen 8 Style) */
+    .calendar-widget {
+      background: var(--plum-card);
+      border-radius: 18px;
+      padding: 14px;
+      color: #fff;
+      margin-bottom: 8px;
+    }
+    .cal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+      font-weight: 800;
+      margin-bottom: 10px;
+    }
+    .cal-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 6px;
+      text-align: center;
+      font-size: 11px;
+    }
+    .cal-day-head { color: #94a3b8; font-weight: 700; font-size: 10px; }
+    .cal-date {
+      padding: 5px 0;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    .cal-date.active {
+      background: #ff5722;
+      color: #fff;
+      font-weight: 800;
+      box-shadow: 0 2px 8px rgba(255, 87, 34, 0.4);
+    }
+
+    /* 4. Category / Mode Cards (Reference Screen 9 Style) */
+    .modes-selector-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 6px;
+    }
+    .mode-item-card {
+      background: #f8fafc;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 16px;
+      padding: 12px 6px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .mode-item-card.selected {
+      border-color: #ff5722;
+      background: rgba(255, 87, 34, 0.08);
+      box-shadow: 0 4px 12px rgba(255, 87, 34, 0.15);
+    }
+    .mode-item-card .mic-icon { font-size: 24px; margin-bottom: 4px; }
+    .mode-item-card .mic-title { font-size: 11.5px; font-weight: 800; color: #0f172a; }
+    .mode-item-card .mic-sub { font-size: 9.5px; color: #64748b; margin-top: 2px; }
+
+    /* 5. Virtual VIP / License Card (Reference Screen 10 Style) */
+    .vip-credit-card {
+      background: linear-gradient(135deg, #ff7043, #d84315);
+      border-radius: 20px;
+      padding: 18px;
+      color: #fff;
+      box-shadow: 0 8px 24px rgba(216, 67, 21, 0.35);
+      position: relative;
+      overflow: hidden;
+      margin-bottom: 10px;
+    }
+    .vcard-chip {
+      width: 32px;
+      height: 24px;
+      background: #ffe0b2;
+      border-radius: 5px;
+      margin-bottom: 16px;
+      opacity: 0.9;
+    }
+    .vcard-number {
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      font-family: 'JetBrains Mono', monospace;
+      margin-bottom: 12px;
+    }
+    .vcard-foot {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      font-size: 11px;
+    }
+    .vcard-foot span { text-transform: uppercase; font-size: 9px; opacity: 0.8; display: block; }
+    .vcard-foot b { font-size: 12px; }
+
+    /* Big Action Button (Reference GET STARTED style) */
+    .cta-big-btn {
+      width: 100%;
+      background: #ff5722;
+      color: #fff;
+      padding: 13px;
+      border-radius: 14px;
+      font-size: 13.5px;
+      font-weight: 800;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      box-shadow: 0 4px 16px rgba(255, 87, 34, 0.35);
+      transition: all 0.2s;
+    }
+    .cta-big-btn:hover { background: #f4511e; transform: translateY(-1px); }
+
+    /* ================= ONBOARDING / WALKTHROUGH OVERLAY ================= */
+    .onboarding-screen {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: var(--plum-dark);
+      z-index: 80;
+      display: none;
+      flex-direction: column;
+    }
+    .onboarding-top-art {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 30px 20px;
+      text-align: center;
+    }
+    .onboard-illustration-circle {
+      width: 170px;
+      height: 170px;
+      background: rgba(255, 87, 34, 0.12);
+      border: 2px dashed rgba(255, 87, 34, 0.4);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 70px;
+      margin-bottom: 20px;
+      box-shadow: 0 0 35px rgba(255, 87, 34, 0.2);
+    }
+    .onboard-bottom-card {
+      background: #ff5722;
+      border-radius: 30px 30px 0 0;
+      padding: 32px 24px 28px;
+      color: #fff;
+      text-align: center;
+    }
+    .onboard-title {
+      font-size: 20px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+    }
+    .onboard-desc {
+      font-size: 12.5px;
+      line-height: 1.5;
+      color: rgba(255, 255, 255, 0.9);
+      margin-bottom: 22px;
+    }
+    .onboard-white-btn {
+      width: 100%;
+      background: #ffffff;
+      color: #ff5722;
+      border: none;
+      padding: 14px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 900;
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+      margin-bottom: 12px;
+    }
+    .onboard-link {
+      font-size: 12px;
+      font-weight: 700;
+      color: #fff;
+      text-decoration: underline;
+      cursor: pointer;
+      opacity: 0.9;
+    }
+
+    /* ================= RIGHT PANEL IN SINGLE MODE: EXPLANATION ================= */
+    .explain-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+    .explain-card {
+      background: rgba(15, 23, 42, 0.7);
+      border: 1px solid rgba(148, 163, 184, 0.18);
+      border-radius: 18px;
+      padding: 20px;
+      backdrop-filter: blur(10px);
+    }
+    .explain-card h3 {
+      font-size: 16px;
+      font-weight: 800;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .explain-card h3 span {
+      background: rgba(255, 87, 34, 0.15);
+      color: #ff5722;
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-weight: 800;
+    }
+    .explain-card p {
+      font-size: 13px;
+      color: #94a3b8;
+      line-height: 1.6;
+      margin-bottom: 12px;
+    }
+
+    /* Comparative Table */
+    .compare-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      font-size: 12px;
+    }
+    .compare-table th {
+      background: rgba(255, 87, 34, 0.12);
+      color: #ff5722;
+      padding: 8px 10px;
+      text-align: left;
+      font-weight: 800;
+      border-bottom: 1px solid rgba(255, 87, 34, 0.3);
+    }
+    .compare-table td {
+      padding: 8px 10px;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+      color: #cbd5e1;
+    }
+
+    /* ================= MODE 2: UI KIT GALLERY (ALL SCREENS SIDE-BY-SIDE) ================= */
+    .gallery-grid {
+      display: none;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 22px;
+      width: 100%;
+    }
+    .gallery-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .gallery-item-title {
+      font-size: 13px;
+      font-weight: 800;
+      color: #e2e8f0;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .gallery-phone-card {
+      width: 240px;
+      height: 480px;
+      background: #000;
+      border-radius: 32px;
+      border: 3px solid #334155;
+      overflow: hidden;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+      transform: scale(1);
+      transition: all 0.2s;
+    }
+    .gallery-phone-card:hover {
+      transform: translateY(-4px);
+      border-color: #ff5722;
+      box-shadow: 0 14px 40px rgba(255, 87, 34, 0.25);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Banner -->
+  <div class="top-banner">
+    <div class="top-title">
+      <h1>
+        📱 TeleBot Native Mobile Architecture
+        <span class="pill">Template Blueprint</span>
+      </h1>
+      <p>Transforming Desktop Tables into Modern Curved-Sheet Mobile UI (Flutter / React Native)</p>
+    </div>
+    <div class="top-controls">
+      <a href="/dashboard" class="top-btn top-btn-ghost">⬅️ Back to Web Dashboard</a>
+      <button class="top-btn top-btn-accent" onclick="showOnboarding()">✨ View Walkthrough (Screen 1)</button>
+    </div>
+  </div>
+
+  <!-- View Mode Switcher -->
+  <div class="view-mode-bar">
+    <div class="mode-pills">
+      <button class="mode-pill active" id="btnModeSingle" onclick="switchViewMode('single')">
+        📱 Interactive Device Simulator (Click to Test)
+      </button>
+      <button class="mode-pill" id="btnModeGallery" onclick="switchViewMode('gallery')">
+        🖼️ UI Kit Gallery (All Screens Side-by-Side as in Reference)
+      </button>
+    </div>
+
+    <!-- Theme Palette Selector -->
+    <div class="theme-selector-wrap">
+      <span style="font-size:11.5px; color:#94a3b8; font-weight:700;">Palette:</span>
+      <div class="theme-chip active" id="pal-coral" onclick="setPalette('coral')">🍷 Coral &amp; Wine (Reference)</div>
+      <div class="theme-chip" id="pal-blue" onclick="setPalette('blue')">🌌 Cyber Blue</div>
+      <div class="theme-chip" id="pal-dark" onclick="setPalette('dark')">🖤 OLED Black</div>
+    </div>
+  </div>
+
+  <div class="view-container">
+
+    <!-- ================= MODE 1: SINGLE INTERACTIVE PHONE ================= -->
+    <div class="single-mode-grid" id="singleModeSection">
+
+      <!-- The Mobile Device -->
+      <div class="phone-mockup" id="interactivePhone">
+        <!-- Notch -->
+        <div class="phone-notch">
+          <div class="notch-camera"></div>
+          <div class="notch-speaker"></div>
+        </div>
+
+        <!-- Phone Status Bar -->
+        <div class="phone-status-bar">
+          <span id="pClock">04:55</span>
+          <div style="display:flex; align-items:center; gap:6px; font-size:11px;">
+            <span>5G Jio</span>
+            <span>📶</span>
+            <span>89% 🔋</span>
+          </div>
+        </div>
+
+        <!-- Dynamic Screen Content -->
+        <div class="screen-body">
+
+          <!-- 1. Header (Plum Wine Theme from reference) -->
+          <div class="screen-header">
+            <div class="screen-header-top">
+              <div class="header-user-info">
+                <h2 id="headerScreenTitle">📦 Accounts Fleet</h2>
+                <p id="headerScreenSub">30 IDs Managed • Foreground Active</p>
+              </div>
+              <span class="header-badge" id="headerLiveBadge">⚡ 18 RUNNING</span>
+            </div>
+
+            <!-- Segmented Filter Control (Reference Style: Current / History) -->
+            <div class="header-segment-row" id="headerSegmentRow">
+              <div class="header-seg-btn active" onclick="setFilterSegment('all')">All (30)</div>
+              <div class="header-seg-btn" onclick="setFilterSegment('running')">Running (18)</div>
+              <div class="header-seg-btn" onclick="setFilterSegment('cooling')">Cooling (2)</div>
+            </div>
+          </div>
+
+          <!-- 2. Curved White Bottom Sheet (Reference Style) -->
+          <div class="curved-sheet" id="curvedSheetContent">
+            <!-- Rendered by JS based on current active bottom tab -->
+          </div>
+
+          <!-- 3. Fixed Bottom Clean & Compact 3-Tab Navigation Bar -->
+          <div class="bottom-navbar" style="grid-template-columns: repeat(3, 1fr);">
+            <div class="nav-tab-item active" id="tab-fleet" onclick="switchPhoneTab('fleet')">
+              <span class="nav-icon">📦</span>
+              <span class="nav-label">Overview</span>
+            </div>
+            <div class="nav-tab-item" id="tab-logs" onclick="switchPhoneTab('logs')">
+              <span class="nav-icon">👥</span>
+              <span class="nav-label">Accounts & Logs</span>
+            </div>
+            <div class="nav-tab-item" id="tab-modes" onclick="switchPhoneTab('modes')">
+              <span class="nav-icon">⚙️</span>
+              <span class="nav-label">Config & 10 Slots</span>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ================= ONBOARDING / WALKTHROUGH OVERLAY ================= -->
+        <div class="onboarding-screen" id="onboardingOverlay">
+          <div class="onboarding-top-art">
+            <div class="onboard-illustration-circle" id="onboardArt">⚡</div>
+            <div style="font-size:12px; color:rgba(255,255,255,0.7); text-transform:uppercase; letter-spacing:1px; font-weight:800;">
+              TeleBot Native Engine
+            </div>
+          </div>
+          <div class="onboard-bottom-card">
+            <div class="onboard-title" id="onboardTitle">24/7 AUTO STREAM DM</div>
+            <div class="onboard-desc" id="onboardDesc">
+              Run up to 100 Telegram IDs simultaneously on your mobile device with zero battery kill using Android Foreground Service.
+            </div>
+            <button class="onboard-white-btn" onclick="nextOnboardingStep()">NEXT STEP ➔</button>
+            <div class="onboard-link" onclick="closeOnboarding()">Skip &amp; Open Dashboard</div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Right Explanation & Blueprint Panel -->
+      <div class="explain-panel">
+
+        <!-- Structural Breakdown Card -->
+        <div class="explain-card">
+          <h3>
+            🏗️ Mobile Architecture vs Old Dashboard
+            <span>Structural Shift</span>
+          </h3>
+          <p>
+            Aapne jo reference screenshot share kiya hai, wo <b>"Curved Sheet Over Dark Header"</b> aur <b>"5-Tab Bottom Navigation"</b> architecture use karta hai. Isme desktop ke lambe horizontal tabs hat kar mobile thumbs ke hisab se modular screens me split ho jate hain:
+          </p>
+
+          <table class="compare-table">
+            <thead>
+              <tr>
+                <th>Desktop Dashboard (Purana)</th>
+                <th>Native Mobile App (Naya Architecture)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Horizontal scrollable phone tabs</td>
+                <td><b>Tab 1: Accounts Fleet</b> — 1-click segmented list cards with status chips</td>
+              </tr>
+              <tr>
+                <td>Heavy raw log text boxes</td>
+                <td><b>Tab 2: Live Radar</b> — Map/Radar style target radar showing stream listeners</td>
+              </tr>
+              <tr>
+                <td>Scattered counter badges</td>
+                <td><b>Tab 3: Analytics</b> — Calendar day-picker with quota heatmaps</td>
+              </tr>
+              <tr>
+                <td>Messy modal checkboxes</td>
+                <td><b>Tab 4: Engine Modes</b> — 3 bold touch cards (Turbo 2s / Safe / AI)</td>
+              </tr>
+              <tr>
+                <td>Manual license checks</td>
+                <td><b>Tab 5: VIP License</b> — Native Digital Credit Card showing device ID</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Real Mobile Benefits Card -->
+        <div class="explain-card">
+          <h3>
+            ⚡ Why this Mobile Architecture Wins
+            <span>100% Native</span>
+          </h3>
+          <p>
+            1. <b>Zero VPS Server Crashes:</b> Telegram socket connections user ke real phone me run hoti hain, jisse aapke VPS par load 0% rehta hai.<br>
+            2. <b>Real Indian Mobile 4G/5G IPs:</b> Har DM user ke Jio/Airtel SIM se nikalta hai, isliye Telegram Peer Flood ya Ban ka chance 95% kam ho jata hai.<br>
+            3. <b>Swipeable Bottom Tabs:</b> Bottom bar se user kisi bhi screen par bina reload ke 60 FPS par switch kar sakta hai.
+          </p>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- ================= MODE 2: UI KIT GALLERY (ALL SCREENS SIDE-BY-SIDE) ================= -->
+    <div class="gallery-grid" id="galleryModeSection">
+
+      <!-- Gallery Screen 1: Onboarding -->
+      <div class="gallery-item">
+        <div class="gallery-item-title">1. Onboarding Walkthrough</div>
+        <div class="gallery-phone-card" style="background:#270c20; display:flex; flex-direction:column;">
+          <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:20px;">
+            <div style="width:80px; height:80px; border-radius:50%; background:rgba(255,87,34,0.15); display:flex; align-items:center; justify-content:center; font-size:36px; margin-bottom:12px;">⚡</div>
+            <div style="font-size:13px; font-weight:800; color:#fff;">TELEBOT VIP</div>
+          </div>
+          <div style="background:#ff5722; border-radius:24px 24px 0 0; padding:18px 14px; text-align:center;">
+            <div style="font-size:13px; font-weight:900; color:#fff;">24/7 AUTO STREAM DM</div>
+            <div style="font-size:10px; color:rgba(255,255,255,0.85); margin:6px 0 12px;">Run 30-100 IDs with zero battery sleep.</div>
+            <div style="background:#fff; color:#ff5722; font-weight:800; font-size:11px; padding:8px; border-radius:8px;">GET STARTED</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Gallery Screen 2: Accounts Fleet -->
+      <div class="gallery-item">
+        <div class="gallery-item-title">2. Fleet Manager (Tab 1)</div>
+        <div class="gallery-phone-card" style="background:#270c20;">
+          <div style="padding:10px 12px; color:#fff;">
+            <div style="font-size:12px; font-weight:800;">📦 Accounts Fleet</div>
+            <div style="display:flex; gap:3px; margin-top:6px; background:rgba(255,255,255,0.1); padding:2px; border-radius:6px; font-size:9px;">
+              <span style="flex:1; background:#ff5722; padding:3px; text-align:center; border-radius:4px; font-weight:700;">All (30)</span>
+              <span style="flex:1; padding:3px; text-align:center;">Running (18)</span>
+            </div>
+          </div>
+          <div style="flex:1; background:#fff; border-radius:20px 20px 0 0; padding:10px; display:flex; flex-direction:column; gap:6px;">
+            <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:6px 8px; display:flex; justify-content:space-between; align-items:center;">
+              <div>
+                <div style="font-size:10px; font-weight:800; color:#0f172a;">Nnn barman</div>
+                <div style="font-size:8px; color:#64748b;">+917602372653 • 9 DMs</div>
+              </div>
+              <span style="background:#dcfce7; color:#15803d; font-size:8px; font-weight:800; padding:1px 4px; border-radius:4px;">RUNNING</span>
+            </div>
+            <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:6px 8px; display:flex; justify-content:space-between; align-items:center;">
+              <div>
+                <div style="font-size:10px; font-weight:800; color:#0f172a;">Raju dos</div>
+                <div style="font-size:8px; color:#64748b;">+919832104421 • 14 DMs</div>
+              </div>
+              <span style="background:#dcfce7; color:#15803d; font-size:8px; font-weight:800; padding:1px 4px; border-radius:4px;">RUNNING</span>
+            </div>
+            <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:6px 8px; display:flex; justify-content:space-between; align-items:center;">
+              <div>
+                <div style="font-size:10px; font-weight:800; color:#0f172a;">SK minal</div>
+                <div style="font-size:8px; color:#64748b;">+919401293812 • 4 DMs</div>
+              </div>
+              <span style="background:#f1f5f9; color:#64748b; font-size:8px; font-weight:800; padding:1px 4px; border-radius:4px;">STANDBY</span>
+            </div>
+          </div>
+          <!-- Mini Bottom Bar -->
+          <div style="height:32px; background:#fff; border-top:1px solid #eee; display:flex; justify-content:space-around; align-items:center; font-size:12px; color:#94a3b8;">
+            <span style="color:#ff5722;">📦</span><span>📡</span><span>📅</span><span>⚡</span><span>💳</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Gallery Screen 3: Live Radar -->
+      <div class="gallery-item">
+        <div class="gallery-item-title">3. Live Stream Radar (Tab 2)</div>
+        <div class="gallery-phone-card" style="background:#270c20;">
+          <div style="padding:10px 12px; color:#fff;">
+            <div style="font-size:12px; font-weight:800;">📡 Live Radar</div>
+            <div style="font-size:9px; color:#ff8a65;">Stream: EARN WITH NIKHIL</div>
+          </div>
+          <div style="flex:1; background:#fff; border-radius:20px 20px 0 0; padding:10px; display:flex; flex-direction:column; gap:8px;">
+            <div style="background:#1c0919; border-radius:12px; height:120px; display:flex; flex-direction:column; align-items:center; justify-content:center; color:#fff;">
+              <div style="width:60px; height:60px; border:1px dashed #ff5722; border-radius:50%; display:flex; align-items:center; justify-content:center;">
+                <div style="width:8px; height:8px; background:#ff5722; border-radius:50%;"></div>
+              </div>
+              <span style="font-size:9px; font-weight:800; margin-top:4px;">48 Listeners Detected</span>
+            </div>
+            <div style="font-size:9.5px; font-weight:800; color:#0f172a;">GENUINE QUEUE TARGETS:</div>
+            <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:6px; font-size:9px; color:#0f172a;">
+              🎯 <b>Neelam</b> ➔ 2s Instant DM Shoot Ready
+            </div>
+            <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:6px; font-size:9px; color:#0f172a;">
+              🎯 <b>Nagaraj</b> ➔ Cloud Contact Locked
+            </div>
+          </div>
+          <div style="height:32px; background:#fff; border-top:1px solid #eee; display:flex; justify-content:space-around; align-items:center; font-size:12px; color:#94a3b8;">
+            <span>📦</span><span style="color:#ff5722;">📡</span><span>📅</span><span>⚡</span><span>💳</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Gallery Screen 4: Analytics -->
+      <div class="gallery-item">
+        <div class="gallery-item-title">4. Analytics Calendar (Tab 3)</div>
+        <div class="gallery-phone-card" style="background:#270c20;">
+          <div style="padding:10px 12px; color:#fff;">
+            <div style="font-size:12px; font-weight:800;">📅 September 2026</div>
+            <div style="font-size:9px; color:#94a3b8;">Daily DM Performance Quota</div>
+          </div>
+          <div style="flex:1; background:#fff; border-radius:20px 20px 0 0; padding:10px; display:flex; flex-direction:column; gap:8px;">
+            <div style="background:#38122e; border-radius:10px; padding:8px; color:#fff; font-size:8px;">
+              <div style="display:flex; justify-content:space-between; margin-bottom:4px; font-weight:700;">
+                <span>SEP 2026</span><span>DAILY: 35/50</span>
+              </div>
+              <div style="display:grid; grid-template-columns:repeat(7,1fr); gap:2px; text-align:center;">
+                <span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span>
+                <span>21</span><span>22</span><span>23</span><span>24</span><span style="background:#ff5722; border-radius:4px; font-weight:800;">25</span><span>26</span><span>27</span>
+              </div>
+            </div>
+            <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:8px; text-align:center;">
+              <div style="font-size:14px; font-weight:800; color:#ff5722;">247 DMs</div>
+              <div style="font-size:9px; color:#64748b;">Delivered Today Across 18 IDs</div>
+            </div>
+          </div>
+          <div style="height:32px; background:#fff; border-top:1px solid #eee; display:flex; justify-content:space-around; align-items:center; font-size:12px; color:#94a3b8;">
+            <span>📦</span><span>📡</span><span style="color:#ff5722;">📅</span><span>⚡</span><span>💳</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Gallery Screen 5: Modes Selector -->
+      <div class="gallery-item">
+        <div class="gallery-item-title">5. Engine Modes (Tab 4)</div>
+        <div class="gallery-phone-card" style="background:#270c20;">
+          <div style="padding:10px 12px; color:#fff;">
+            <div style="font-size:12px; font-weight:800;">⚡ Engine Modes</div>
+            <div style="font-size:9px; color:#94a3b8;">Choose Dispatch Strategy</div>
+          </div>
+          <div style="flex:1; background:#fff; border-radius:20px 20px 0 0; padding:10px; display:flex; flex-direction:column; gap:8px;">
+            <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:4px;">
+              <div style="background:rgba(255,87,34,0.1); border:1px solid #ff5722; border-radius:8px; padding:6px 2px; text-align:center;">
+                <div style="font-size:14px;">⚡</div>
+                <div style="font-size:8px; font-weight:800; color:#ff5722;">Turbo 2s</div>
+              </div>
+              <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:6px 2px; text-align:center;">
+                <div style="font-size:14px;">🛡️</div>
+                <div style="font-size:8px; font-weight:800; color:#0f172a;">Safe 45s</div>
+              </div>
+              <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:6px 2px; text-align:center;">
+                <div style="font-size:14px;">🤖</div>
+                <div style="font-size:8px; font-weight:800; color:#0f172a;">AI Auto</div>
+              </div>
+            </div>
+            <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:8px; font-size:9px;">
+              <b>⚡ Turbo 2s Mode:</b> Shoots DM within 2s of live listener joining stream.
+            </div>
+          </div>
+          <div style="height:32px; background:#fff; border-top:1px solid #eee; display:flex; justify-content:space-around; align-items:center; font-size:12px; color:#94a3b8;">
+            <span>📦</span><span>📡</span><span>📅</span><span style="color:#ff5722;">⚡</span><span>💳</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Gallery Screen 6: VIP License -->
+      <div class="gallery-item">
+        <div class="gallery-item-title">6. VIP License Card (Tab 5)</div>
+        <div class="gallery-phone-card" style="background:#270c20;">
+          <div style="padding:10px 12px; color:#fff;">
+            <div style="font-size:12px; font-weight:800;">💳 VIP License</div>
+            <div style="font-size:9px; color:#94a3b8;">Device &amp; Quota Binding</div>
+          </div>
+          <div style="flex:1; background:#fff; border-radius:20px 20px 0 0; padding:10px; display:flex; flex-direction:column; gap:8px;">
+            <div style="background:linear-gradient(135deg, #ff7043, #d84315); border-radius:12px; padding:10px; color:#fff;">
+              <div style="font-size:7px; opacity:0.8;">ACTIVE PLAN</div>
+              <div style="font-size:11px; font-weight:800; margin:3px 0;">VIP 30 IDs FLEET</div>
+              <div style="font-size:8px; font-family:'JetBrains Mono';">NODE-ID: #ASH-KING-104</div>
+            </div>
+            <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:6px; font-size:9px;">
+              <b>Device:</b> Redmi Note 12 5G<br>
+              <b>Status:</b> Licensed &amp; Bound
+            </div>
+          </div>
+          <div style="height:32px; background:#fff; border-top:1px solid #eee; display:flex; justify-content:space-around; align-items:center; font-size:12px; color:#94a3b8;">
+            <span>📦</span><span>📡</span><span>📅</span><span>⚡</span><span style="color:#ff5722;">💳</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <script>
+    // Live Clock
+    function updateClock() {
+      const now = new Date();
+      let h = now.getHours().toString().padStart(2, '0');
+      let m = now.getMinutes().toString().padStart(2, '0');
+      const el = document.getElementById('pClock');
+      if (el) el.innerText = `${h}:${m}`;
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // Accounts Dataset for Simulator
+    let currentTab = 'fleet';
+    let currentFilter = 'all';
+    let accountsList = [
+      { name: 'Nnn barman', phone: '+917602372653', running: true, dms: 9, status: 'Online' },
+      { name: 'Raju dos', phone: '+919832104421', running: true, dms: 14, status: 'Online' },
+      { name: 'SK minal', phone: '+919401293812', running: true, dms: 18, status: 'Online' },
+      { name: 'Aman bhai', phone: '+919876543210', running: true, dms: 12, status: 'Online' },
+      { name: 'Pooja crypto', phone: '+919811223344', running: false, dms: 0, status: 'Standby' },
+      { name: 'Vikram singh', phone: '+919712345678', running: true, dms: 22, status: 'Online' },
+      { name: 'Rohit trader', phone: '+919654321987', running: true, dms: 8, status: 'Online' },
+      { name: 'Sunil tech', phone: '+919543219876', running: false, dms: 0, status: 'Standby' }
+    ];
+
+    // Render Curved Sheet Content based on active tab
+    function renderSheet() {
+      const c = document.getElementById('curvedSheetContent');
+      if (!c) return;
+
+      const titleEl = document.getElementById('headerScreenTitle');
+      const subEl = document.getElementById('headerScreenSub');
+      const segRow = document.getElementById('headerSegmentRow');
+
+      if (currentTab === 'fleet') {
+        if (titleEl) titleEl.innerText = '📦 Accounts Fleet';
+        if (subEl) subEl.innerText = '30 IDs Managed • Foreground Active';
+        if (segRow) segRow.style.display = 'flex';
+
+        let filtered = accountsList;
+        if (currentFilter === 'running') filtered = accountsList.filter(x => x.running);
+        if (currentFilter === 'cooling') filtered = accountsList.filter(x => !x.running);
+
+        let h = `
+          <!-- Add ID Quick Input Button -->
+          <button class="cta-big-btn" onclick="addNewSimAccount()">
+            ➕ Connect New Telegram Account (Slot Free)
+          </button>
+        `;
+
+        filtered.forEach((a, i) => {
+          h += `
+            <div class="account-card-item">
+              <div class="acc-icon-box">📱</div>
+              <div class="acc-details">
+                <div class="acc-name-row">
+                  <div class="acc-title">${a.name}</div>
+                  <span class="acc-status-tag ${a.running ? 'tag-online' : 'tag-standby'}">
+                    ${a.running ? 'Running' : 'Standby'}
+                  </span>
+                </div>
+                <div class="acc-sub-info">
+                  <span>${a.phone}</span>
+                  <span>•</span>
+                  <span>Today DMs: <b>${a.dms}</b></span>
+                </div>
+              </div>
+              <div class="mini-switch ${a.running ? 'active' : ''}" onclick="toggleAccSwitch(${i})">
+                <div class="mini-thumb"></div>
+              </div>
+            </div>
+          `;
+        });
+        c.innerHTML = h;
+
+      } else if (currentTab === 'logs') {
+        if (titleEl) titleEl.innerText = '👥 Accounts & Live Logs';
+        if (subEl) subEl.innerText = 'ID-Wise Real-Time MTProto Stream';
+        if (segRow) segRow.style.display = 'flex';
+
+        c.innerHTML = `
+          <!-- Horizontal ID Switcher for Logs -->
+          <div style="display:flex; gap:6px; overflow-x:auto; padding-bottom:8px; margin-bottom:8px;">
+            <div style="background:#ff5722; color:#fff; border-radius:8px; padding:6px 10px; font-size:11px; font-weight:800; white-space:nowrap; cursor:pointer;">
+              🟢 +1 (202) SANDRA (38)
+            </div>
+            <div style="background:#f1f5f9; color:#0f172a; border-radius:8px; padding:6px 10px; font-size:11px; font-weight:700; white-space:nowrap; cursor:pointer;">
+              🟢 +91 76023 Nnn (24)
+            </div>
+            <div style="background:#f1f5f9; color:#0f172a; border-radius:8px; padding:6px 10px; font-size:11px; font-weight:700; white-space:nowrap; cursor:pointer;">
+              🟢 +91 98234 Bot 03 (19)
+            </div>
+          </div>
+
+          <!-- Account Active Controls -->
+          <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:10px 12px; display:flex; justify-content:space-between; align-items:center;">
+            <div>
+              <div style="font-size:12px; font-weight:800; color:#0f172a;">SANDRA WILLIAM (+1 202 555-0143)</div>
+              <div style="font-size:10px; color:#15803d; font-weight:700;">🟢 Active in Parallel Slot #1 • 38 DMs Today</div>
+            </div>
+            <span style="font-size:11px; font-weight:800; background:#dcfce7; color:#15803d; padding:3px 8px; border-radius:6px;">FIRING</span>
+          </div>
+
+          <!-- Terminal Live Logs Box for Selected ID -->
+          <div style="background:#090e17; border:1px solid #1e293b; border-radius:14px; padding:12px; font-family:'JetBrains Mono', monospace; font-size:10px; color:#38bdf8; display:flex; flex-direction:column; gap:6px; min-height:160px; max-height:220px; overflow-y:auto;">
+            <div style="color:#64748b;">[08:15:10 pm] [INIT] MTProto Socket connected with Jio 5G carrier.</div>
+            <div style="color:#f59e0b;">[08:15:20 pm] [RADAR] Voice chat listener hooked to target channel.</div>
+            <div style="color:#10b981; font-weight:700;">[08:15:32 pm] 🚀 [DM DELIVERED] Slot #1 delivered to @Rahul (ID: 9481)</div>
+            <div style="color:#e2e8f0;">[08:16:15 pm] [SAFE GAP] Waiting 38s natural human delay before next DM...</div>
+            <div style="color:#10b981; font-weight:700;">[08:16:53 pm] 🚀 [DM DELIVERED] Live message delivered to @Pooja_Sharma</div>
+          </div>
+
+          <button class="cta-big-btn" onclick="alert('Logs exported to phone clipboard successfully!')">
+            📋 Copy ID Live Logs
+          </button>
+        `;
+
+      } else if (currentTab === 'stats') {
+        if (titleEl) titleEl.innerText = '📅 Performance & Analytics';
+        if (subEl) subEl.innerText = 'Daily DMs Delivered vs Skipped';
+        if (segRow) segRow.style.display = 'none';
+
+        c.innerHTML = `
+          <!-- Calendar Style Date Picker from Reference Screen 8 -->
+          <div class="calendar-widget">
+            <div class="cal-header">
+              <span>SEPTEMBER 2026</span>
+              <span style="color:#ff8a65; font-size:11px;">TODAY: SEP 25</span>
+            </div>
+            <div class="cal-grid">
+              <div class="cal-day-head">MO</div>
+              <div class="cal-day-head">TU</div>
+              <div class="cal-day-head">WE</div>
+              <div class="cal-day-head">TH</div>
+              <div class="cal-day-head">FR</div>
+              <div class="cal-day-head">SA</div>
+              <div class="cal-day-head">SU</div>
+
+              <div class="cal-date">21</div>
+              <div class="cal-date">22</div>
+              <div class="cal-date">23</div>
+              <div class="cal-date">24</div>
+              <div class="cal-date active">25</div>
+              <div class="cal-date">26</div>
+              <div class="cal-date">27</div>
+            </div>
+          </div>
+
+          <!-- Summary Metric Cards -->
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+            <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:14px; padding:12px; text-align:center;">
+              <div style="font-size:22px; font-weight:900; color:#ff5722;">247</div>
+              <div style="font-size:11px; font-weight:700; color:#64748b; text-transform:uppercase;">DMs Sent Today</div>
+            </div>
+            <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:14px; padding:12px; text-align:center;">
+              <div style="font-size:22px; font-weight:900; color:#15803d;">98.4%</div>
+              <div style="font-size:11px; font-weight:700; color:#64748b; text-transform:uppercase;">Reachability</div>
+            </div>
+          </div>
+
+          <!-- Safe SpamBot Status Pill -->
+          <div style="background:#dcfce7; border:1px solid #86efac; border-radius:14px; padding:12px; display:flex; align-items:center; gap:10px;">
+            <span style="font-size:24px;">🛡️</span>
+            <div>
+              <div style="font-size:12.5px; font-weight:800; color:#15803d;">SpamBot Rate-Limit Shield Active</div>
+              <div style="font-size:10.5px; color:#166534; margin-top:2px;">All 18 running IDs are clean and authorized.</div>
+            </div>
+          </div>
+        `;
+
+      } else if (currentTab === 'modes') {
+        if (titleEl) titleEl.innerText = '⚙️ Config & 10 Parallel Slots';
+        if (subEl) subEl.innerText = 'Parallel Slots, Spintax & Direct APK Export';
+        if (segRow) segRow.style.display = 'none';
+
+        c.innerHTML = `
+          <!-- Concurrency Setting -->
+          <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:16px; padding:14px; margin-bottom:8px;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-size:12px; font-weight:800; color:#0f172a;">⚡ Active Parallel Slots:</span>
+              <span style="font-size:12px; font-weight:900; color:#ff5722; background:rgba(255,87,34,0.1); padding:2px 8px; border-radius:6px;">10 IDs Parallel</span>
+            </div>
+            <div style="font-size:10.5px; color:#64748b; margin-top:4px;">
+              Minimum 10 accounts fire simultaneously in round-robin stream with 35s-65s safe human gaps.
+            </div>
+          </div>
+
+          <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:16px; padding:14px; margin-bottom:8px;">
+            <div style="font-size:12px; font-weight:800; color:#0f172a; margin-bottom:4px;">
+              🌐 Target Channel Link (Auto-Synced from VPS):
+            </div>
+            <input type="text" value="https://t.me/earn_with_nikhil" style="width:100%; padding:8px 10px; border-radius:8px; border:1px solid #cbd5e1; font-size:11.5px; font-weight:700; color:#0f172a;" readonly>
+          </div>
+
+          <!-- Direct Download Flutter Project / APK Package -->
+          <div style="background:#131c2e; border:1px solid #1e293b; border-radius:16px; padding:14px; color:#fff; display:flex; flex-direction:column; gap:8px;">
+            <div style="font-size:12px; font-weight:800; color:#38bdf8;">📥 Flutter Source &amp; Project Archive</div>
+            <div style="font-size:10.5px; color:#94a3b8;">
+              3-Tab Clean Flutter codebase with Day/Night mode ready for Android Studio / GitHub push.
+            </div>
+            <a href="/api/download/flutter-app" class="cta-big-btn" style="text-decoration:none; margin-top:4px; font-size:12px; padding:10px;">
+              📦 Download telebot_flutter.tar.gz
+            </a>
+          </div>
+        `;
+
+      } else if (currentTab === 'license') {
+        if (titleEl) titleEl.innerText = '💳 VIP License & Device';
+        if (subEl) subEl.innerText = 'Connected Device & Fleet Quota';
+        if (segRow) segRow.style.display = 'none';
+
+        c.innerHTML = `
+          <!-- Credit Card Style from Reference Screen 10 -->
+          <div class="vip-credit-card">
+            <div class="vcard-chip"></div>
+            <div class="vcard-number">•••• •••• •••• 1048</div>
+            <div class="vcard-foot">
+              <div>
+                <span>VIP CLIENT</span>
+                <b>Ash_King User #104</b>
+              </div>
+              <div style="text-align:right;">
+                <span>EXPIRES</span>
+                <b>31 OCT 2026</b>
+              </div>
+            </div>
+          </div>
+
+          <!-- Device Binding Info -->
+          <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:16px; padding:14px; display:flex; flex-direction:column; gap:8px;">
+            <div style="display:flex; justify-content:space-between; font-size:12px;">
+              <span style="color:#64748b;">Device Model:</span>
+              <b style="color:#0f172a;">Redmi Note 12 Pro 5G</b>
+            </div>
+            <div style="display:flex; justify-content:space-between; font-size:12px;">
+              <span style="color:#64748b;">Network IP:</span>
+              <b style="color:#15803d;">Indian Jio 5G Mobile Carrier</b>
+            </div>
+            <div style="display:flex; justify-content:space-between; font-size:12px;">
+              <span style="color:#64748b;">Fleet Capacity:</span>
+              <b style="color:#ff5722;">30 IDs Plan (Active)</b>
+            </div>
+          </div>
+
+          <!-- 1-Click Update Check Button -->
+          <button class="cta-big-btn" onclick="alert('Checking VPS for OTA updates... App is on latest build v2.4!')">
+            🔄 Check for Engine Updates (OTA)
+          </button>
+        `;
+      }
+    }
+
+    // Switch Bottom Tabs
+    function switchPhoneTab(tabName) {
+      currentTab = tabName;
+      document.querySelectorAll('.nav-tab-item').forEach(el => el.classList.remove('active'));
+      const activeEl = document.getElementById(`tab-${tabName}`);
+      if (activeEl) activeEl.classList.add('active');
+      renderSheet();
+    }
+
+    // Header Filter Segment
+    function setFilterSegment(filterName) {
+      currentFilter = filterName;
+      document.querySelectorAll('.header-seg-btn').forEach(el => el.classList.remove('active'));
+      if (event && event.target) event.target.classList.add('active');
+      renderSheet();
+    }
+
+    // Mode Selector in Tab 4
+    function selectModeCard(el, mode) {
+      document.querySelectorAll('.mode-item-card').forEach(c => c.classList.remove('selected'));
+      el.classList.add('selected');
+    }
+
+    // Toggle Account Running Status
+    function toggleAccSwitch(idx) {
+      accountsList[idx].running = !accountsList[idx].running;
+      renderSheet();
+    }
+
+    // Add New Account to Fleet
+    function addNewSimAccount() {
+      const newIdx = accountsList.length + 1;
+      accountsList.push({
+        name: `VIP Bot #${newIdx}`,
+        phone: `+9198${Math.floor(10000000 + Math.random() * 89999999)}`,
+        running: true,
+        dms: 0,
+        status: 'Online'
+      });
+      renderSheet();
+    }
+
+    // View Mode Switcher (Single Phone vs Full UI Kit Gallery)
+    function switchViewMode(mode) {
+      const sSec = document.getElementById('singleModeSection');
+      const gSec = document.getElementById('galleryModeSection');
+      const bSingle = document.getElementById('btnModeSingle');
+      const bGal = document.getElementById('btnModeGallery');
+
+      if (mode === 'single') {
+        sSec.style.display = 'grid';
+        gSec.style.display = 'none';
+        bSingle.classList.add('active');
+        bGal.classList.remove('active');
+      } else {
+        sSec.style.display = 'none';
+        gSec.style.display = 'grid';
+        bGal.classList.add('active');
+        bSingle.classList.remove('active');
+      }
+    }
+
+    // Palette Selector
+    function setPalette(palName) {
+      document.querySelectorAll('.theme-chip').forEach(c => c.classList.remove('active'));
+      const chip = document.getElementById(`pal-${palName}`);
+      if (chip) chip.classList.add('active');
+
+      const phone = document.getElementById('interactivePhone');
+      if (palName === 'coral') {
+        document.documentElement.style.setProperty('--plum-dark', '#270c20');
+        document.documentElement.style.setProperty('--sheet-bg', '#ffffff');
+        document.documentElement.style.setProperty('--accent', '#ff5722');
+      } else if (palName === 'blue') {
+        document.documentElement.style.setProperty('--plum-dark', '#0f172a');
+        document.documentElement.style.setProperty('--sheet-bg', '#ffffff');
+        document.documentElement.style.setProperty('--accent', '#0284c7');
+      } else if (palName === 'dark') {
+        document.documentElement.style.setProperty('--plum-dark', '#000000');
+        document.documentElement.style.setProperty('--sheet-bg', '#09090b');
+        document.documentElement.style.setProperty('--accent', '#22c55e');
+      }
+      renderSheet();
+    }
+
+    // Onboarding Walkthrough Steps
+    let onboardStep = 0;
+    const onboardData = [
+      { art: '⚡', title: '24/7 AUTO STREAM DM', desc: 'Runs up to 100 Telegram IDs on your phone with zero battery kill using Android Foreground Service.' },
+      { art: '📡', title: 'LIVE STREAM RADAR', desc: 'Hooks into voice chat listeners in real-time and locks them into Telegram Cloud Contacts before they leave.' },
+      { art: '🛡️', title: 'REAL MOBILE 5G IP', desc: 'DMs leave directly from your Indian mobile carrier SIM. Zero server load & 95% ban reduction.' }
+    ];
+
+    function showOnboarding() {
+      onboardStep = 0;
+      updateOnboardingUI();
+      const o = document.getElementById('onboardingOverlay');
+      if (o) o.style.display = 'flex';
+    }
+
+    function closeOnboarding() {
+      const o = document.getElementById('onboardingOverlay');
+      if (o) o.style.display = 'none';
+    }
+
+    function nextOnboardingStep() {
+      onboardStep++;
+      if (onboardStep >= onboardData.length) {
+        closeOnboarding();
+      } else {
+        updateOnboardingUI();
+      }
+    }
+
+    function updateOnboardingUI() {
+      const data = onboardData[onboardStep];
+      const artEl = document.getElementById('onboardArt');
+      const tEl = document.getElementById('onboardTitle');
+      const dEl = document.getElementById('onboardDesc');
+      if (artEl) artEl.innerText = data.art;
+      if (tEl) tEl.innerText = data.title;
+      if (dEl) dEl.innerText = data.desc;
+    }
+
+    // Initialize initial render
+    renderSheet();
+  </script>
+</body>
+</html>

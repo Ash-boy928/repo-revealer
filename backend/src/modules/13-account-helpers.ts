@@ -188,7 +188,7 @@ function saveAccountsLocal(): void {
     });
   }
 
-  // 1. Sync to SQLite
+  // 1. Sync to SQLite (Primary Storage)
   if (sqliteDb) {
     try {
       const accStmt = sqliteDb.prepare(`INSERT OR REPLACE INTO accounts (phone, owner, label, running, sent_count, daily_sent_count, data_json, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`);
@@ -200,11 +200,11 @@ function saveAccountsLocal(): void {
     }
   }
 
-  // 2. Sync to accounts.json
+  // 2. Pure SQLite primary: Non-blocking debounced backup snapshot for accounts.json
   try {
-    fs.writeFileSync(ACCOUNTS_FILE, JSON.stringify(list, null, 2), 'utf8');
+    asyncSaveJson(ACCOUNTS_FILE, list, 2000);
   } catch (e) {
-    console.error('Error saving accounts.json locally:', e);
+    console.error('Error scheduling accounts.json backup:', e);
   }
 }
 

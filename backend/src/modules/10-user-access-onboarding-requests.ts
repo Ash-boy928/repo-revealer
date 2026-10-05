@@ -1,5 +1,4 @@
 // ---------------- USER ACCESS & ONBOARDING REQUESTS ----------------
-const ACCESS_REQUESTS_FILE = path.join(__dirname, 'access_requests.json');
 
 // ==========================================
 // TELEBOT SMART KHATABOOK & BILLING ENGINE
@@ -82,7 +81,6 @@ interface BillingDataStore {
   [key: string]: any;
 }
 
-const BILLING_FILE = path.join(__dirname, 'billing.json');
 let billingStore: BillingDataStore = {
   settings: {
     default_rate_per_day: 15,
@@ -209,10 +207,11 @@ function saveBillingLocal() {
     }
   }
 
+  // Pure SQLite primary: Non-blocking debounced backup snapshot for billing.json
   try {
-    fs.writeFileSync(BILLING_FILE, JSON.stringify(billingStore, null, 2), 'utf8');
+    asyncSaveJson(BILLING_FILE, billingStore, 2000);
   } catch (e) {
-    console.error('Failed to save billing.json:', e);
+    console.error('Error scheduling billing.json backup:', e);
   }
 }
 

@@ -1,7 +1,7 @@
 // Joins src/modules/* in manifest order into server.build.ts (byte-for-byte, no code changes).
 import fs from 'fs'; import path from 'path'; import crypto from 'crypto'; import { fileURLToPath } from 'url';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const m = JSON.parse(fs.readFileSync(path.join(root, 'manifest.json'), 'utf8'));
+const m = JSON.parse(fs.readFileSync(path.join(root, 'modules.manifest.json'), 'utf8'));
 const out = m.modules.map(x => fs.readFileSync(path.join(root, 'src/modules', x.file), 'utf8')).join('');
 fs.writeFileSync(path.join(root, 'server.build.ts'), out);
 const sha = crypto.createHash('sha256').update(out).digest('hex');

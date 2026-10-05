@@ -557,6 +557,9 @@ app.post('/api/admin/billing/entry/delete', (req: any, res: any) => {
     if (idx === -1) return res.status(404).json({ ok: false, msg: 'Invoice not found!' });
     const target = billingStore.invoices[idx];
     billingStore.invoices.splice(idx, 1);
+    if (sqliteDb) {
+      try { sqliteDb.prepare("DELETE FROM billing_invoices WHERE id = ?").run(id); } catch(e){}
+    }
     saveBillingLocal();
     const summary = getUserLedgerSummary(target.username);
     return res.json({
@@ -569,6 +572,9 @@ app.post('/api/admin/billing/entry/delete', (req: any, res: any) => {
     if (idx === -1) return res.status(404).json({ ok: false, msg: 'Payment not found!' });
     const target = billingStore.payments[idx];
     billingStore.payments.splice(idx, 1);
+    if (sqliteDb) {
+      try { sqliteDb.prepare("DELETE FROM billing_payments WHERE id = ?").run(id); } catch(e){}
+    }
     saveBillingLocal();
     const summary = getUserLedgerSummary(target.username);
     return res.json({

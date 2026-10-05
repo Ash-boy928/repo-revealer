@@ -11,10 +11,11 @@ function saveUsersLocal() {
       console.error('Error saving users to SQLite:', e);
     }
   }
+  // Pure SQLite primary: Non-blocking debounced backup snapshot for users.json
   try {
-    fs.writeFileSync(USERS_FILE, JSON.stringify(usersList, null, 2), 'utf8');
+    asyncSaveJson(USERS_FILE, usersList, 2000);
   } catch (e) {
-    console.error('Error saving users.json locally:', e);
+    console.error('Error scheduling users.json backup:', e);
   }
 }
 
