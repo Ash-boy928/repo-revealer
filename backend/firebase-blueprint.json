@@ -1,0 +1,63 @@
+{
+  "collections": [
+    {
+      "name": "accounts",
+      "description": "Telegram accounts being managed",
+      "fields": {
+        "phone": "string (Document ID)",
+        "label": "string",
+        "api_id": "number",
+        "api_hash": "string",
+        "owner": "string",
+        "config": "map",
+        "username": "string",
+        "session_string": "string"
+      }
+    },
+    {
+      "name": "users",
+      "description": "Dashboard users",
+      "fields": {
+        "username": "string (Document ID)",
+        "password": "string",
+        "active": "boolean",
+        "role": "string"
+      }
+    },
+    {
+      "name": "tele_queues",
+      "description": "DM queue per phone number",
+      "fields": {
+        "phone": "string (Document ID)",
+        "uids": "array of numbers"
+      }
+    },
+    {
+      "name": "tele_sent",
+      "description": "Already sent users per phone number",
+      "fields": {
+        "phone": "string (Document ID)",
+        "uids": "array of numbers"
+      }
+    },
+    {
+      "name": "tele_peers",
+      "description": "Peer info cache per phone number",
+      "fields": {
+        "phone": "string (Document ID)",
+        "peers": "map of uid -> PeerInfo"
+      }
+    },
+    {
+      "name": "global_api_pool",
+      "description": "10 API ID and API Hash key slots for Telegram accounts pool",
+      "fields": {
+        "slot_id": "string (Document ID e.g. api_1 to api_10)",
+        "api_id": "number",
+        "api_hash": "string",
+        "label": "string",
+        "enabled": "boolean"
+      }
+    }
+  ]
+}

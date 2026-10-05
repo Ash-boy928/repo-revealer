@@ -128,6 +128,11 @@ const handleAuthLogin = (req         , res          ) => {
     }
 
     if (!u || !isValid) {
+      const clientIp = getClientIp(req);
+      const lock = recordFailedLoginAttempt(clientIp);
+      if (lock.locked) {
+        return res.status(429).json({ ok: false, msg: `🛡️ Security Lockout: Too many failed login attempts. Temporarily blocked for ${lock.lockoutMins} minutes.` });
+      }
       if (!isExplicitAdmin) {
         const att = loginAttempts.get(uname) || { count: 0, until: 0 };
         att.count = (att.count || 0) + 1;
@@ -137,10 +142,11 @@ const handleAuthLogin = (req         , res          ) => {
         }
         loginAttempts.set(uname, att);
       }
-      return res.status(401).json({ ok: false, msg: 'Wrong username or password!' });
+      return res.status(401).json({ ok: false, msg: `Wrong username or password! (${lock.remainingAttempts} attempts remaining)` });
     }
 
     loginAttempts.delete(uname);
+    recordSuccessfulLogin(getClientIp(req));
 
     // Platform Authorization Check (Mobile App vs Web Browser)
     const rawPlat = (
@@ -205,6 +211,6 @@ const handleAuthLogin = (req         , res          ) => {
   }
 };
 
-app.post('/login', handleAuthLogin);
-app.post('/api/login', handleAuthLogin);
+app.post('/login', checkLoginBruteForce, handleAuthLogin);
+app.post('/api/login', checkLoginBruteForce, handleAuthLogin);
 

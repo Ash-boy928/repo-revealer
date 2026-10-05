@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGradM" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0e2340"/>
+      <stop offset="45%" stop-color="#1d4ed8"/>
+      <stop offset="100%" stop-color="#0284c7"/>
+    </linearGradient>
+    <linearGradient id="planeGradM" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#e0f2fe"/>
+    </linearGradient>
+    <linearGradient id="shadeGradM" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="100%" stop-color="#0284c7"/>
+    </linearGradient>
+    <filter id="shadowM" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="12" stdDeviation="14" flood-color="#000000" flood-opacity="0.45"/>
+    </filter>
+  </defs>
+
+  <!-- Full bleed background for adaptive icons -->
+  <rect width="512" height="512" fill="url(#bgGradM)"/>
+
+  <!-- Centered safe-zone group scaled down to 75% -->
+  <g transform="translate(64, 64) scale(0.75)">
+    <!-- Glowing background ring -->
+    <circle cx="256" cy="256" r="190" fill="rgba(56,189,248,0.2)"/>
+
+    <!-- Telegram Paper Airplane Graphic -->
+    <g filter="url(#shadowM)" transform="translate(16, 12)">
+      <!-- Main wing -->
+      <path d="M125 245 L385 140 L285 365 L225 295 L125 245 Z" fill="url(#planeGradM)"/>
+      <!-- Fold wing shadow -->
+      <path d="M225 295 L385 140 L270 295 Z" fill="url(#shadeGradM)"/>
+      <!-- Back rudder triangle -->
+      <path d="M225 295 L255 350 L270 295 Z" fill="#0369a1"/>
+    </g>
+
+    <!-- Signal indicator -->
+    <circle cx="390" cy="135" r="12" fill="#38bdf8"/>
+    <circle cx="390" cy="135" r="22" fill="none" stroke="#38bdf8" stroke-width="3" stroke-opacity="0.6"/>
+  </g>
+</svg>

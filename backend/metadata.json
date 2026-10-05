@@ -1,0 +1,8 @@
+{
+  "name": "Remix Telebot",
+  "description": "Imported from GitHub: Ash-boy928/Telebot",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

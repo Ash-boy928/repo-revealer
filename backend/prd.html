@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Product Requirement Document (PRD) - Leo TeleGm Bot</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@700;800&display=swap');
+
+:root {
+  --primary: #0284c7;
+  --primary-dark: #0369a1;
+  --bg: #0b1320;
+  --card-bg: #132035;
+  --text: #f1f5f9;
+  --text-muted: #94a3b8;
+  --border: rgba(148, 163, 184, 0.18);
+  --accent: #38bdf8;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', -apple-system, sans-serif; }
+body { background: var(--bg); color: var(--text); padding: 24px 16px 60px; line-height: 1.65; }
+
+.container { max-width: 900px; margin: 0 auto; }
+
+/* Top Floating Action Bar */
+.action-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(19, 32, 53, 0.9);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border);
+  padding: 14px 20px;
+  border-radius: 16px;
+  margin-bottom: 24px;
+  position: sticky;
+  top: 16px;
+  z-index: 100;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.brand-title { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 16px; color: #fff; }
+.brand-badge { background: linear-gradient(135deg, #0284c7, #0369a1); padding: 4px 10px; border-radius: 8px; font-size: 12px; color: #fff; font-weight: 700; }
+.btn-group { display: flex; gap: 10px; flex-wrap: wrap; }
+.btn {
+  padding: 9px 16px;
+  border-radius: 10px;
+  border: none;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+  text-decoration: none;
+  color: #fff;
+}
+.btn-primary { background: linear-gradient(135deg, #0284c7, #0369a1); box-shadow: 0 4px 14px rgba(2, 132, 199, 0.4); }
+.btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(2, 132, 199, 0.6); }
+.btn-word { background: linear-gradient(135deg, #2563eb, #1d4ed8); }
+.btn-word:hover { transform: translateY(-1px); }
+.btn-md { background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2); }
+.btn-md:hover { background: rgba(255,255,255,0.2); }
+
+/* Document Paper Container */
+.doc-paper {
+  background: #ffffff;
+  color: #1e293b;
+  padding: 48px 56px;
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+  font-size: 15px;
+}
+
+/* Document Typography */
+.doc-paper h1 { font-family: 'Outfit', sans-serif; font-size: 28px; font-weight: 800; color: #0f172a; margin-bottom: 8px; border-bottom: 3px solid #0284c7; padding-bottom: 12px; }
+.doc-paper h2 { font-size: 20px; font-weight: 700; color: #0f274a; margin-top: 32px; margin-bottom: 12px; border-bottom: 1.5px solid #e2e8f0; padding-bottom: 6px; }
+.doc-paper h3 { font-size: 16px; font-weight: 700; color: #1e40af; margin-top: 20px; margin-bottom: 8px; }
+.doc-paper p { margin-bottom: 14px; line-height: 1.7; color: #334155; }
+.doc-paper ul, .doc-paper ol { margin-left: 24px; margin-bottom: 16px; color: #334155; }
+.doc-paper li { margin-bottom: 6px; }
+.doc-paper strong { color: #0f172a; }
+
+.doc-paper pre {
+  background: #0f172a;
+  color: #38bdf8;
+  padding: 16px;
+  border-radius: 12px;
+  overflow-x: auto;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12.5px;
+  line-height: 1.6;
+  margin: 18px 0;
+}
+
+.doc-paper table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 20px 0;
+  font-size: 13.5px;
+}
+.doc-paper th, .doc-paper td {
+  padding: 10px 14px;
+  border: 1px solid #cbd5e1;
+  text-align: left;
+}
+.doc-paper th {
+  background: #f1f5f9;
+  font-weight: 700;
+  color: #0f172a;
+}
+.doc-paper tr:nth-child(even) {
+  background: #f8fafc;
+}
+
+.meta-pill {
+  display: inline-block;
+  background: #e0f2fe;
+  color: #0369a1;
+  font-weight: 700;
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  margin-bottom: 20px;
+}
+
+/* Print Styles for Perfect PDF Export */
+@media print {
+  body { background: #fff; padding: 0; color: #000; }
+  .action-bar { display: none !important; }
+  .container { max-width: 100%; width: 100%; margin: 0; }
+  .doc-paper {
+    box-shadow: none;
+    padding: 20px;
+    border-radius: 0;
+  }
+  pre {
+    background: #f1f5f9 !important;
+    color: #0f172a !important;
+    border: 1px solid #cbd5e1 !important;
+  }
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+  <!-- Top Action Bar -->
+  <div class="action-bar">
+    <div class="brand-title">
+      <span>🦁 Leo TeleGm Bot</span>
+      <span class="brand-badge">PRD Document</span>
+    </div>
+    <div class="btn-group">
+      <button class="btn btn-primary" onclick="downloadPdf()">📄 Download / Print PDF</button>
+      <button class="btn btn-word" onclick="downloadWordDoc()">📝 Download Word (.doc)</button>
+      <a href="/PRD.md" download="Leo_TeleGm_Bot_PRD.md" class="btn btn-md">📋 Download Markdown</a>
+    </div>
+  </div>
+
+  <!-- Document Paper Body -->
+  <div class="doc-paper" id="prdContent">
+    <div class="meta-pill">VERSION 2.5.0 ENTERPRISE SAAS • UPDATED SEPTEMBER 2026</div>
+    <h1>Product Requirement Document (PRD)</h1>
+    <h3 style="color:#64748b;font-weight:600;margin-top:-4px;margin-bottom:24px;">Project: Leo TeleGm Bot — Multi-Account Telegram Live Monitor &amp; DM Automation Suite</h3>
+
+    <h2>1. Executive Summary &amp; Overview</h2>
+    <p><strong>Leo TeleGm Bot</strong> is an enterprise multi-tenant SaaS application built with <strong>Node.js, TypeScript, Express, and GramJS (Telegram MTProto API)</strong>. The platform automates lead discovery, live participant scraping, anti-ban direct messaging (DM), and proxy rotation across multiple Telegram accounts simultaneously.</p>
+    <p>It allows marketers, community builders, and administrators to capture active group call/stream audiences in real-time, filter verified genuine leads, and conduct targeted outbound promotional campaigns with automated <code>@SpamBot</code> health monitoring and multi-tenant administrative control.</p>
+
+    <h2>2. Target Personas &amp; User Roles</h2>
+    <ul>
+      <li><strong>Super Admin (Platform Owner)</strong>: Manages SaaS clients, validity expiration dates, account quotas, and system settings. Has access to manual lead queue transfers and automated midnight lead reclamation.</li>
+      <li><strong>Subscribed Panel User (Marketer / Promoter)</strong>: Connects and manages multiple Telegram accounts using official MTProto credentials. Configures promotional messages, channels, delay intervals, proxies, and automation modes.</li>
+    </ul>
+
+    <h2>3. System Architecture &amp; Tech Stack</h2>
+    <pre>
++------------------------------------------------------------------------+
+|                        FRONTEND PRESENTATION                           |
+|  * dashboard.html (User Console - 2-Column Responsive Layout)          |
+|  * admin.html (Super Admin Control Center)                            |
+|  * login.html (Session Auth & Password Recovery via Security Question) |
++-----------------------------------+-+----------------------------------+
+                                    | HTTP / REST APIs / SSE Stream
++-----------------------------------v------------------------------------+
+|                        NODE.JS / EXPRESS BACKEND                       |
+|  * Session Authentication & Role-Based Access Control (RBAC)           |
+|  * GramJS Telegram MTProto Protocol Engine                            |
+|  * Two-Tier Lead Qualification Pipeline (Raw -> Genuine Queue)         |
+|  * SpamBot 5-Tier Auto-Cooldown & Health Monitor                       |
+|  * Midnight Lead Reclamation Scheduler (00:00 Auto-Transfer)          |
+|  * Anti-Ban DM Dispatcher (Delays, Spintax, Message Rotation)          |
+|  * Proxy Handler (Direct, SOCKS5, MTProxy)                             |
++-----------------------------------+-+----------------------------------+
+                                    | File Storage & State Cache
++-----------------------------------v------------------------------------+
+|                       PERSISTENCE & SECURITY                           |
+|  * StringSessions / .session Files (Persistent Telegram Auth)          |
+|  * accounts.json, users.json, configs.json, queues.json                |
+|  * Telegram Bot API Outbound Webhooks (Urgent Admin/User Alerts)       |
++------------------------------------------------------------------------+
+    </pre>
+    <ul>
+      <li><strong>Backend Runtime</strong>: Node.js (TypeScript / Native ESM).</li>
+      <li><strong>Telegram Client Engine</strong>: <code>telegram</code> (GramJS MTProto API library).</li>
+      <li><strong>Web Server</strong>: Express.js with <code>express-session</code> and Server-Sent Events (SSE) for log streaming.</li>
+      <li><strong>Frontend</strong>: Modern responsive HTML5, CSS Grid (Desktop 2-Column + Mobile Fluid), Vanilla JavaScript.</li>
+      <li><strong>Standard Timezone</strong>: Indian Standard Time (IST — UTC+5:30).</li>
+    </ul>
+
+    <h2>4. Detailed Feature Specifications</h2>
+    
+    <h3>4.1. Multi-Account Telegram Lifecycle Management</h3>
+    <ul>
+      <li><strong>Official MTProto Login</strong>: Connects accounts using <code>Account Name/Label</code>, <code>Phone Number (+91...)</code>, <code>API ID</code>, and <code>API Hash</code>. Supports Telegram official OTP and 2FA Cloud Password.</li>
+      <li><strong>Account Controls</strong>: <code>START BOT</code>, <code>STOP BOT</code>, <code>DELETE ACCOUNT</code>, and <code>CHECK SPAMBOT</code>.</li>
+      <li><strong>Identity Display</strong>: Every account is prominently displayed by its custom Name/Label across all Admin and User tables.</li>
+    </ul>
+
+    <h3>4.2. Live Stream Voice Chat Lead Capture Engine</h3>
+    <ul>
+      <li><strong>Target Channels &amp; Groups</strong>: Monitors live group voice chats and video calls in real-time.</li>
+      <li><strong>Ignore / Non-Target Blacklist</strong>: Specific channel links can be blacklisted so the bot completely ignores them.</li>
+      <li><strong>Two-Tier Qualification Queue</strong>:
+        <ol>
+          <li><strong>Raw Staging Queue (<code>raw_queue</code>)</strong>: Newly captured participant IDs.</li>
+          <li><strong>Genuine Verified Queue (<code>verified_queue</code>)</strong>: Filtered genuine active users (excluding bots, deleted accounts, and duplicate contacts).</li>
+        </ol>
+      </li>
+    </ul>
+
+    <h3>4.3. Anti-Ban DM Automation &amp; Dispatcher</h3>
+    <ul>
+      <li><strong>Independent Automation Modes</strong>: 🔴 Live Monitor Toggle (<code>live_on</code>) and ✉️ DM Sender Toggle (<code>dm_on</code>).</li>
+      <li><strong>Message Rotation &amp; Spintax</strong>: 3 customizable message templates with dynamic <code>{CHANNEL_LINK}</code> replacement and random template selection per recipient.</li>
+      <li><strong>Configurable Intervals &amp; Quotas</strong>: Configurable delays between DMs (e.g. 60s to 120s) with daily quota tracking and midnight reset.</li>
+    </ul>
+
+    <h3>4.4. SpamBot Auto-Health Check &amp; 5-Attempt Cooldown Loop</h3>
+    <ul>
+      <li>Periodically checks account health with official <code>@SpamBot</code>.</li>
+      <li>If restricted, initiates an auto-cooldown routine with up to 5 retries.</li>
+      <li>If restriction persists:
+        <ul>
+          <li>Automatically disables DM Sender (<code>dm_on = false</code>) to protect account safety.</li>
+          <li>Keeps Live Monitor (<code>live_on = true</code>) active for continuous lead collection.</li>
+          <li>Dispatches alert webhook to Telegram.</li>
+        </ul>
+      </li>
+    </ul>
+
+    <h3>4.5. Proxy Chaining &amp; IP Security</h3>
+    <ul>
+      <li>Supports <strong>Direct Connection</strong>, <strong>SOCKS5</strong>, and <strong>MTProxy</strong>.</li>
+      <li>Configurable per individual account: <code>IP / Host</code>, <code>Port</code>, <code>Username</code>, <code>Password</code>, <code>MTProxy Secret</code>.</li>
+    </ul>
+
+    <h3>4.6. Super Admin Control Center &amp; Multi-Tenant SaaS</h3>
+    <ul>
+      <li><strong>User Licensing &amp; Validity</strong>: Super Admin sets plan expiration date or lifetime access. Expired accounts are automatically disabled and blocked from login.</li>
+      <li><strong>Manual Lead Transfer</strong>: Super Admin can transfer genuine leads from User A to User B.</li>
+      <li><strong>Midnight Lead Reclamation Cron</strong>: Daily at 00:00 (12:00 AM IST), all uncontacted leads in client queues are automatically transferred to the Super Admin master queue.</li>
+      <li><strong>View-As User Dashboard</strong>: 1-click admin view into any client user's live dashboard.</li>
+    </ul>
+
+    <h3>4.7. Security, Auth &amp; Telegram Webhook Alerts</h3>
+    <ul>
+      <li>Password recovery via Security Questions and Answers.</li>
+      <li>Instant Telegram alerts for account restrictions, OTP requests, and subscription expiry.</li>
+    </ul>
+
+    <h2>5. API Endpoints Reference</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Endpoint</th>
+          <th>Method</th>
+          <th>Role</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>/api/login</td><td>POST</td><td>Public</td><td>Authenticates user/admin session</td></tr>
+        <tr><td>/api/accounts</td><td>GET</td><td>User/Admin</td><td>Lists user's Telegram accounts &amp; daily stats</td></tr>
+        <tr><td>/api/account/add</td><td>POST</td><td>User/Admin</td><td>Connects new account &amp; requests OTP</td></tr>
+        <tr><td>/api/account/verify-otp</td><td>POST</td><td>User/Admin</td><td>Submits numeric OTP code</td></tr>
+        <tr><td>/api/account/verify-2fa</td><td>POST</td><td>User/Admin</td><td>Submits 2FA Cloud Password</td></tr>
+        <tr><td>/api/account/start</td><td>POST</td><td>User/Admin</td><td>Starts bot live listener &amp; DM loop</td></tr>
+        <tr><td>/api/account/stop</td><td>POST</td><td>User/Admin</td><td>Stops bot instance</td></tr>
+        <tr><td>/api/account/spambot-check</td><td>POST</td><td>User/Admin</td><td>Runs @SpamBot diagnosis</td></tr>
+        <tr><td>/api/account/config</td><td>GET/POST</td><td>User/Admin</td><td>Gets/sets promotion messages &amp; intervals</td></tr>
+        <tr><td>/api/account/proxy</td><td>GET/POST</td><td>User/Admin</td><td>Gets/sets proxy configuration</td></tr>
+        <tr><td>/api/logs/stream</td><td>GET (SSE)</td><td>User/Admin</td><td>Real-time live log stream</td></tr>
+        <tr><td>/api/admin/users</td><td>GET</td><td>Admin</td><td>Lists all platform users, accounts &amp; metrics</td></tr>
+        <tr><td>/api/admin/user/create</td><td>POST</td><td>Admin</td><td>Creates SaaS user with quota &amp; expiry</td></tr>
+        <tr><td>/api/admin/user/update</td><td>POST</td><td>Admin</td><td>Updates password, expiry, status, limits</td></tr>
+        <tr><td>/api/admin/queue/transfer</td><td>POST</td><td>Admin</td><td>Transfers genuine leads between users</td></tr>
+        <tr><td>/api/admin/view-as</td><td>POST</td><td>Admin</td><td>Switches session to view user dashboard</td></tr>
+      </tbody>
+    </table>
+
+    <h2>6. Document Metadata</h2>
+    <ul>
+      <li><strong>Product Name</strong>: Leo TeleGm Bot</li>
+      <li><strong>Version</strong>: 2.5.0 Enterprise SaaS</li>
+      <li><strong>Author / Designer</strong>: Ash_King</li>
+      <li><strong>Release Date</strong>: September 2026</li>
+    </ul>
+  </div>
+</div>
+
+<script>
+function downloadPdf() {
+  window.print();
+}
+
+function downloadWordDoc() {
+  const content = document.getElementById('prdContent').innerHTML;
+  const header = "<html xmlns:o='urn:schemas-microsoft-com:office:office' "+
+        "xmlns:w='urn:schemas-microsoft-com:office:word' "+
+        "xmlns='http://www.w3.org/TR/REC-html40'>"+
+        "<head><meta charset='utf-8'><title>Leo TeleGm Bot PRD</title><style>body{font-family:Arial,sans-serif;line-height:1.6;color:#1e293b;} h1{color:#0284c7;} h2{color:#0f274a;border-bottom:1px solid #cbd5e1;padding-bottom:4px;} h3{color:#1e40af;} table{width:100%;border-collapse:collapse;} th,td{border:1px solid #cbd5e1;padding:8px;} th{background:#f1f5f9;font-weight:bold;} pre{background:#f1f5f9;padding:10px;font-family:Courier New;font-size:11px;}</style></head><body>";
+  const footer = "</body></html>";
+  const sourceHTML = header + content + footer;
+  
+  const source = 'data:application/vnd.ms-word;charset=utf-8,' + encodeURIComponent(sourceHTML);
+  const fileDownload = document.createElement("a");
+  document.body.appendChild(fileDownload);
+  fileDownload.href = source;
+  fileDownload.download = 'Leo_TeleGm_Bot_PRD.doc';
+  fileDownload.click();
+  document.body.removeChild(fileDownload);
+}
+</script>
+
+</body>
+</html>

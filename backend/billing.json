@@ -1,0 +1,10 @@
+{
+  "settings": {
+    "default_rate_per_day": 15,
+    "default_currency": "INR"
+  },
+  "user_configs": {},
+  "invoices": [],
+  "payments": [],
+  "downtimes": []
+}

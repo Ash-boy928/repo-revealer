@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script>
+// Clean expired tokens & prevent endless mobile redirect loops
+(function() {
+  const urlP = new URLSearchParams(window.location.search);
+  if (urlP.get('expired') || urlP.get('logout') || urlP.get('relogin') || urlP.get('fresh')) {
+    localStorage.removeItem('telebot_token');
+    localStorage.removeItem('telebot_user');
+    localStorage.removeItem('telebot_role');
+    localStorage.removeItem('telebot_view_as');
+    try { sessionStorage.clear(); } catch(e){}
+    try {
+      document.cookie = 'telebot_sess=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+      document.cookie = 'telebot_sess.sig=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+    } catch(e){}
+    return;
+  }
+  const savedToken = localStorage.getItem('telebot_token');
+  if (savedToken) {
+    // Validate token against server first before jumping into dashboard
+    fetch('/whoami', { headers: { 'Authorization': 'Bearer ' + savedToken } })
+      .then(function(r) { return r.ok ? r.json() : null; })
+      .then(function(u) {
+        if (u && u.username) {
+          const target = (u.role === 'admin') ? 'admin' : 'dashboard';
+          window.location.replace(target + '?token=' + encodeURIComponent(savedToken));
+        } else {
+          // Token expired or invalid - silently purge so user can enter credentials!
+          localStorage.removeItem('telebot_token');
+          localStorage.removeItem('telebot_user');
+          localStorage.removeItem('telebot_role');
+        }
+      })
+      .catch(function() {
+        // Network offline or failed - do not lock user out, let them log in manually
+      });
+  }
+})();
+// Telegram Mini App (TMA) Auto-Login
+(function() {
+  if (window.Telegram && window.Telegram.WebApp) {
+    try {
+      window.Telegram.WebApp.ready();
+      window.Telegram.WebApp.expand();
+      if (window.Telegram.WebApp.setHeaderColor) {
+        window.Telegram.WebApp.setHeaderColor('#0c131d');
+        window.Telegram.WebApp.setBackgroundColor('#0c131d');
+      }
+      var initData = window.Telegram.WebApp.initData;
+      if (initData && initData.length > 0) {
+        fetch('/api/tma/auth', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ initData: initData })
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(res) {
+          if (res.ok && res.token) {
+            localStorage.setItem("telebot_token", res.token);
+            localStorage.setItem("telebot_role", res.role || "user");
+            window.location.replace((res.role === "admin" ? "admin" : "dashboard") + "?token=" + encodeURIComponent(res.token));
+          }
+        })
+        .catch(function(e) {});
+      }
+    } catch (e) {}
+  }
+})();
+</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Leo TeleGm Bot - Login</title>
+<meta name="description" content="Leo TeleGm Bot - Telegram multi-account promoter, live monitor, and DM automation dashboard">
+<meta property="og:title" content="Leo TeleGm Bot - Login">
+<meta property="og:description" content="Leo TeleGm Bot - Telegram multi-account promoter, live monitor, and DM automation dashboard">
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#0e2340">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="TeleBot">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+<link rel="icon" type="image/svg+xml" href="/icons/icon.svg">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap');
+  * { margin:0; padding:0; box-sizing:border-box; font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,sans-serif; -webkit-tap-highlight-color:transparent; }
+  
+  html {
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    min-height: 100%;
+    height: auto;
+  }
+  body {
+    background: #0c131d;
+    background: radial-gradient(circle at 50% 0%, #1a2c47 0%, #0c131d 80%);
+    background-attachment: fixed;
+    min-height: 100vh;
+    min-height: 100dvh;
+    height: auto;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #f1f5f9;
+    padding: 14px 12px 30px;
+  }
+  .login-wrap {
+    width: 100%;
+    max-width: 385px;
+    margin: auto;
+  }
+  .card {
+    background: rgba(20, 31, 46, 0.92);
+    border: 1px solid rgba(56, 189, 248, 0.25);
+    border-radius: 18px;
+    padding: 18px 18px 14px 18px;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5), 0 0 25px rgba(56, 189, 248, 0.08);
+    backdrop-filter: blur(14px);
+    position: relative;
+    overflow: hidden;
+  }
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #38bdf8, #818cf8, #c084fc);
+  }
+  .top-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    gap: 8px;
+  }
+  .brand-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(56, 189, 248, 0.12);
+    border: 1px solid rgba(56, 189, 248, 0.28);
+    border-radius: 14px;
+    padding: 3px 9px;
+    font-size: 10.5px;
+    font-weight: 800;
+    color: #38bdf8;
+    letter-spacing: 0.5px;
+  }
+  .pulse-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #4ade80;
+    box-shadow: 0 0 6px #4ade80;
+  }
+  .pwa-header-btn {
+    background: linear-gradient(135deg, rgba(56, 189, 248, 0.2), rgba(129, 140, 248, 0.25));
+    border: 1px solid rgba(56, 189, 248, 0.45);
+    color: #38bdf8;
+    border-radius: 12px;
+    padding: 4px 10px;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+  }
+  .pwa-header-btn:hover, .pwa-header-btn:active {
+    background: rgba(56, 189, 248, 0.35);
+    color: #fff;
+    transform: scale(0.97);
+  }
+  h1 {
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: -0.4px;
+    color: #fff;
+    line-height: 1.2;
+  }
+  p.sub {
+    font-size: 11.5px;
+    color: #94a3b8;
+    margin-bottom: 10px;
+  }
+  .compact-bar {
+    background: rgba(30, 41, 59, 0.65);
+    border: 1px solid rgba(148, 163, 184, 0.16);
+    border-radius: 10px;
+    padding: 6px 10px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: 10.5px;
+  }
+  .quick-btn {
+    border: 1px solid rgba(56, 189, 248, 0.35);
+    background: rgba(56, 189, 248, 0.15);
+    color: #38bdf8;
+    border-radius: 6px;
+    padding: 3px 7px;
+    font-size: 10px;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .field-wrap {
+    margin-bottom: 10px;
+    text-align: left;
+  }
+  label {
+    display: block;
+    font-size: 10.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #94a3b8;
+    margin-bottom: 4px;
+  }
+  .input-box {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+  input {
+    width: 100%;
+    padding: 9px 12px;
+    border-radius: 10px;
+    border: 1.5px solid rgba(148, 163, 184, 0.22);
+    background: rgba(12, 19, 29, 0.92);
+    color: #fff;
+    font-size: 14px;
+    outline: none;
+    transition: all 0.2s ease;
+  }
+  input:focus {
+    border-color: #38bdf8;
+    box-shadow: 0 0 0 2.5px rgba(56, 189, 248, 0.2);
+    background: rgba(15, 23, 35, 0.98);
+  }
+  input::placeholder {
+    color: #475569;
+    font-size: 13px;
+  }
+  .toggle-pwd {
+    position: absolute;
+    right: 10px;
+    background: none;
+    border: none;
+    color: #94a3b8;
+    cursor: pointer;
+    font-size: 14px;
+    padding: 4px;
+    box-shadow: none;
+  }
+  button.submit-btn {
+    width: 100%;
+    padding: 10px;
+    margin-top: 4px;
+    border: none;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #0284c7 0%, #2563eb 50%, #7c3aed 100%);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 0.3px;
+    cursor: pointer;
+    box-shadow: 0 6px 18px rgba(37, 99, 235, 0.32);
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+  button.submit-btn:active {
+    transform: scale(0.98);
+  }
+  .err {
+    color: #f87171;
+    font-size: 11px;
+    text-align: center;
+    margin-top: 6px;
+    min-height: 16px;
+    font-weight: 600;
+  }
+  .ok {
+    color: #4ade80;
+    font-size: 11px;
+    text-align: center;
+    margin-top: 6px;
+    min-height: 16px;
+    font-weight: 600;
+  }
+  .bottom-links {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 8px;
+    font-size: 11.5px;
+    font-weight: 600;
+    padding-top: 6px;
+    border-top: 1px solid rgba(148, 163, 184, 0.12);
+  }
+  .bottom-links a {
+    color: #38bdf8;
+    text-decoration: none;
+    cursor: pointer;
+  }
+  .bottom-links a:hover {
+    text-decoration: underline;
+  }
+  .qbox {
+    background: rgba(56, 189, 248, 0.1);
+    border: 1.5px solid rgba(56, 189, 248, 0.3);
+    border-radius: 10px;
+    padding: 10px;
+    margin-bottom: 10px;
+    font-size: 12px;
+    color: #7dd3fc;
+    text-align: center;
+    font-weight: 600;
+  }
+  .back-btn {
+    text-align: center;
+    margin-top: 10px;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: #94a3b8;
+    cursor: pointer;
+  }
+  .back-btn:hover {
+    color: #fff;
+  }
+  .credit-box {
+    margin-top: 8px;
+    text-align: center;
+    font-size: 9.5px;
+    color: #64748b;
+    letter-spacing: 1px;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+  .credit-box b {
+    color: #38bdf8;
+    letter-spacing: 0.5px;
+  }
+</style>
+</head>
+<body>
+<div class="login-wrap">
+  <!-- Login Form Card -->
+  <div class="card" id="loginCard">
+    <div class="top-header-row">
+      <div class="brand-badge">
+        <span class="pulse-dot"></span>
+        LEO TELEGM BOT
+      </div>
+      <button type="button" class="pwa-header-btn" id="pwaInstallHeaderBtn" onclick="triggerPWAInstall()">
+        📲 Install App
+      </button>
+    </div>
+
+    <h1>Sign In</h1>
+    <p class="sub">Telegram Multi-Account Automation &amp; Live Monitor</p>
+
+    <!-- 1-Row Compact Helper & Admin Notice -->
+    <div class="compact-bar">
+      <div style="color:#94a3b8;">
+        Admin: <b style="color:#f1f5f9;">Use your credentials</b>
+      </div>
+    </div>
+
+    <div class="field-wrap">
+      <label for="uname">Username</label>
+      <div class="input-box">
+        <input type="text" id="uname" placeholder="Enter username" autocomplete="username" autofocus>
+      </div>
+    </div>
+
+    <div class="field-wrap">
+      <label for="pwd">Password</label>
+      <div class="input-box">
+        <input type="password" id="pwd" placeholder="Enter password" autocomplete="current-password">
+        <button type="button" class="toggle-pwd" onclick="togglePwdVisibility('pwd', this)">👁️</button>
+      </div>
+    </div>
+
+    <button class="submit-btn" id="loginBtn" onclick="doLogin()">SIGN IN</button>
+
+    <div class="err" id="err"></div>
+
+    <div class="bottom-links">
+      <a onclick="showForgot()">Forgot Password? 🔑</a>
+      <a href="/landing">🌐 Features &amp; Comparison ➔</a>
+    </div>
+
+    <div style="font-size:12px; color:#94a3b8; text-align:center; margin-top:14px; padding:10px 14px; background:rgba(56,189,248,0.06); border:1px solid rgba(56,189,248,0.2); border-radius:10px;">
+      <span style="color:#cbd5e1;">Need a new bot ID or access renewal?</span><br>
+      <a id="contactAdminBotLink" href="https://t.me/TYvhlrz_bot?start=request_id" onclick="return openContactAdminBot(event)" target="_blank" rel="noopener noreferrer" style="display:inline-flex; align-items:center; gap:6px; margin-top:6px; color:#38bdf8; font-weight:700; text-decoration:none; padding:6px 14px; border-radius:8px; background:rgba(56,189,248,0.14); border:1px solid rgba(56,189,248,0.35); transition:all 0.2s ease; cursor:pointer;">
+        <span>💬 Contact Admin on Telegram</span>
+        <span style="font-size:11px;">➔</span>
+      </a>
+    </div>
+
+    <!-- 1-Click Mobile Cache & Session Reset (Fixes Stale Browser Cookie & Redirects) -->
+    <div style="margin-top:10px;text-align:center;">
+      <button type="button" onclick="cleanBrowserCacheAndReload()" style="background:transparent;border:none;color:#64748b;font-size:11.5px;cursor:pointer;padding:4px 8px;border-radius:6px;display:inline-flex;align-items:center;gap:5px;text-decoration:underline;">
+        <span>🧹 Reset Mobile Cache &amp; Fresh Session</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Forgot Password Card -->
+  <div class="card" id="forgotCard" style="display:none">
+    <div class="top-header-row">
+      <div class="brand-badge">
+        <span class="pulse-dot" style="background:#fbbf24;box-shadow:0 0 6px #fbbf24"></span>
+        SECURITY RECOVERY
+      </div>
+    </div>
+    <h1>Reset Password</h1>
+    <p class="sub">Answer your security question</p>
+
+    <div id="step1">
+      <div class="field-wrap">
+        <label for="f_uname">Your Username</label>
+        <input type="text" id="f_uname" placeholder="e.g. rahul or admin" autocomplete="username">
+      </div>
+      <button class="submit-btn" onclick="fetchQuestion()">GET SECURITY QUESTION</button>
+      <div class="err" id="f_err1"></div>
+    </div>
+
+    <div id="step2" style="display:none">
+      <div class="qbox" id="qBox"></div>
+      <div class="field-wrap">
+        <label for="f_answer">Your Security Answer</label>
+        <input type="text" id="f_answer" placeholder="Type your answer" autocomplete="off">
+      </div>
+      <div class="field-wrap">
+        <label for="f_newpwd">New Password</label>
+        <div class="input-box">
+          <input type="password" id="f_newpwd" placeholder="Min 6 characters" autocomplete="new-password">
+          <button type="button" class="toggle-pwd" onclick="togglePwdVisibility('f_newpwd', this)">👁️</button>
+        </div>
+      </div>
+      <button class="submit-btn" onclick="doReset()">UPDATE PASSWORD</button>
+      <div class="err" id="f_err2"></div>
+    </div>
+
+    <div class="ok" id="f_ok"></div>
+    <div class="back-btn" onclick="showLogin()">← Back to Sign In</div>
+  </div>
+
+  <!-- Credit Footer -->
+  <div class="credit-box">
+    Design By <b>Ash_King</b>
+  </div>
+</div>
+
+<!-- iOS Safari PWA Install Modal -->
+<div id="iosInstallModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:9999;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(4px);">
+  <div style="background:#131f2e;border:1px solid rgba(56,189,248,0.35);border-radius:16px;max-width:340px;width:100%;padding:18px;color:#fff;box-shadow:0 20px 40px rgba(0,0,0,0.6);">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+      <span style="font-size:24px;">🍏</span>
+      <div>
+        <h3 style="font-size:15px;font-weight:800;color:#38bdf8;">Install on iPhone / iPad</h3>
+        <p style="font-size:11px;color:#94a3b8;">Safari me 2 step me app install karein</p>
+      </div>
+    </div>
+    <ol style="font-size:12px;line-height:1.6;color:#cbd5e1;padding-left:16px;margin-bottom:14px;">
+      <li>Safari ke bottom toolbar me <strong>Share button</strong> (⎋) tap karein.</li>
+      <li>Scroll karke <strong>"Add to Home Screen"</strong> chunein.</li>
+      <li>Top-right me <strong>"Add"</strong> tap karein!</li>
+    </ol>
+    <button onclick="document.getElementById('iosInstallModal').style.display='none'" style="width:100%;background:#1e293b;border:1px solid rgba(148,163,184,0.3);border-radius:8px;padding:9px;color:#fff;font-weight:700;font-size:12px;cursor:pointer;">Samajh Gaya / Close</button>
+  </div>
+</div>
+
+<script>
+function togglePwdVisibility(inputId, btn) {
+  const el = document.getElementById(inputId);
+  if (!el) return;
+  if (el.type === 'password') {
+    el.type = 'text';
+    btn.textContent = '🔒';
+  } else {
+    el.type = 'password';
+    btn.textContent = '👁️';
+  }
+}
+
+function showForgot() {
+  document.getElementById('loginCard').style.display = 'none';
+  document.getElementById('forgotCard').style.display = 'block';
+  document.getElementById('step1').style.display = 'block';
+  document.getElementById('step2').style.display = 'none';
+  document.getElementById('f_err1').textContent = '';
+  document.getElementById('f_err2').textContent = '';
+  document.getElementById('f_ok').textContent = '';
+}
+
+function showLogin() {
+  document.getElementById('forgotCard').style.display = 'none';
+  document.getElementById('loginCard').style.display = 'block';
+}
+
+async function fetchQuestion() {
+  const uname = document.getElementById('f_uname').value.trim();
+  if (!uname) { 
+    document.getElementById('f_err1').textContent = 'Enter your username first!'; 
+    return; 
+  }
+  const r = await fetch('/api/forgot/question?username=' + encodeURIComponent(uname));
+  const j = await r.json();
+  if (!r.ok) { 
+    document.getElementById('f_err1').textContent = '❌ ' + (j.msg || 'User not found!'); 
+    return; 
+  }
+  document.getElementById('qBox').textContent = '❓ ' + j.question;
+  document.getElementById('step1').style.display = 'none';
+  document.getElementById('step2').style.display = 'block';
+}
+
+async function doReset() {
+  const ans = document.getElementById('f_answer').value.trim();
+  const newpwd = document.getElementById('f_newpwd').value;
+  document.getElementById('f_err2').textContent = '';
+  document.getElementById('f_ok').textContent = '';
+  if (!ans) { 
+    document.getElementById('f_err2').textContent = 'Enter the answer first!'; 
+    return; 
+  }
+  if (newpwd.length < 6) { 
+    document.getElementById('f_err2').textContent = 'New password must be at least 6 characters!'; 
+    return; 
+  }
+  const r = await fetch('/api/forgot/reset', {
+    method: 'POST', 
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({
+      username: document.getElementById('f_uname').value.trim(), 
+      answer: ans, 
+      new_password: newpwd
+    })
+  });
+  const j = await r.json();
+  if (r.ok) { 
+    document.getElementById('f_ok').textContent = '✅ ' + j.msg; 
+    setTimeout(showLogin, 2000); 
+  } else { 
+    document.getElementById('f_err2').textContent = '❌ ' + (j.msg || 'Reset failed!'); 
+  }
+}
+
+
+async function cleanBrowserCacheAndReload() {
+  try {
+    localStorage.clear();
+    sessionStorage.clear();
+    if (window.caches) {
+      const keys = await caches.keys();
+      await Promise.all(keys.map(k => caches.delete(k)));
+    }
+    if (navigator.serviceWorker) {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      for (const reg of regs) {
+        await reg.unregister();
+      }
+    }
+  } catch(e) {}
+  try {
+    document.cookie = 'telebot_sess=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+    document.cookie = 'telebot_sess.sig=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+  } catch(e) {}
+  window.location.replace('/login?fresh=' + Date.now());
+}
+
+let isLoggingIn = false;
+async function doLogin() {
+  if (isLoggingIn) return;
+  const uname = document.getElementById('uname').value.trim();
+  const pwd = document.getElementById('pwd').value.trim();
+  const errEl = document.getElementById('err');
+  const btn = document.getElementById('loginBtn');
+
+  if (!uname || !pwd) { 
+    if (errEl) errEl.textContent = 'Please enter both username and password.'; 
+    return; 
+  }
+
+  isLoggingIn = true;
+  btn.disabled = true;
+  btn.innerHTML = '<span>⚡ AUTHENTICATING...</span>';
+  if (errEl) errEl.textContent = '';
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 9000);
+
+  const isNativeApp = Boolean(window.isNativeApp || (window.TelegramWebviewProxy) || /LeoTeleBot|okhttp|dart:io/i.test(navigator.userAgent));
+  const clientPlatform = isNativeApp ? 'android' : 'web';
+
+  try {
+    const r = await fetch('/login', {
+      method: 'POST', 
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'x-client-platform': clientPlatform
+      },
+      credentials: 'same-origin',
+      signal: controller.signal,
+      body: JSON.stringify({ username: uname, password: pwd, platform: clientPlatform })
+    });
+    clearTimeout(timeoutId);
+
+    const j = await r.json().catch(() => ({}));
+    if (r.ok && j.msg === 'ok') {
+      btn.innerHTML = '<span>🚀 REDIRECTING...</span>';
+      localStorage.removeItem('telebot_view_as');
+      if (j.token) {
+        localStorage.setItem('telebot_token', j.token);
+        localStorage.setItem('telebot_user', j.username || uname);
+        localStorage.setItem('telebot_role', j.role || 'user');
+      }
+      const target = (j.role === 'admin') ? 'admin' : 'dashboard';
+      window.location.replace(target + (j.token ? ('?token=' + encodeURIComponent(j.token)) : ''));
+    } else {
+      if (errEl) errEl.textContent = '❌ ' + (j.msg || 'Invalid username or password!');
+      btn.disabled = false;
+      btn.innerHTML = 'SIGN IN';
+      isLoggingIn = false;
+    }
+  } catch (err) {
+    clearTimeout(timeoutId);
+    if (errEl) {
+      if (err.name === 'AbortError') {
+        errEl.textContent = '⚠️ Request timed out. Please try again.';
+      } else {
+        errEl.textContent = '❌ Connection failed. Please check internet & retry.';
+      }
+    }
+    btn.disabled = false;
+    btn.innerHTML = 'SIGN IN';
+    isLoggingIn = false;
+  }
+}
+
+document.getElementById('pwd').addEventListener('keydown', e => { 
+  if (e.key === 'Enter') doLogin(); 
+});
+document.getElementById('uname').addEventListener('keydown', e => { 
+  if (e.key === 'Enter') document.getElementById('pwd').focus(); 
+});
+document.getElementById('pwd').addEventListener('input', () => {
+  document.getElementById('err').textContent = '';
+});
+
+// PWA Service Worker Registration & Install Handler
+let deferredPWAInstallPrompt = null;
+const isPWAStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator).standalone === true;
+const isIOSDevice = /iphone|ipad|ipod/.test(window.navigator.userAgent.toLowerCase());
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js', { scope: '/' })
+      .then(() => console.log('[PWA] ServiceWorker registered'))
+      .catch((err) => console.log('[PWA] ServiceWorker registration error:', err));
+  });
+}
+
+if (!isPWAStandalone) {
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPWAInstallPrompt = e;
+  });
+
+  window.addEventListener('appinstalled', () => {
+    const btn = document.getElementById('pwaInstallHeaderBtn');
+    if (btn) btn.style.display = 'none';
+    deferredPWAInstallPrompt = null;
+  });
+} else {
+  // If already running standalone PWA, hide install button
+  window.addEventListener('DOMContentLoaded', () => {
+    const btn = document.getElementById('pwaInstallHeaderBtn');
+    if (btn) btn.style.display = 'none';
+  });
+}
+
+function triggerPWAInstall() {
+  if (isIOSDevice) {
+    const modal = document.getElementById('iosInstallModal');
+    if (modal) modal.style.display = 'flex';
+    return;
+  }
+  if (deferredPWAInstallPrompt) {
+    deferredPWAInstallPrompt.prompt();
+    deferredPWAInstallPrompt.userChoice.then((choiceResult) => {
+      if (choiceResult.outcome === 'accepted') {
+        const btn = document.getElementById('pwaInstallHeaderBtn');
+        if (btn) btn.style.display = 'none';
+      }
+      deferredPWAInstallPrompt = null;
+    });
+  } else {
+    alert('App install karne ke liye browser menu (3 dots) par tap karke "Install app" ya "Add to Home screen" select karein.');
+  }
+}
+
+// Admin Telegram Bot Link Management
+let cachedAdminBotUrl = localStorage.getItem('telebot_admin_bot_url') || 'https://t.me/TYvhlrz_bot?start=request_id';
+let cachedAdminBotUser = localStorage.getItem('telebot_admin_bot_username') || 'TYvhlrz_bot';
+
+function applyAdminBotLink(url, username) {
+  if (!url) return;
+  cachedAdminBotUrl = url;
+  localStorage.setItem('telebot_admin_bot_url', url);
+  if (username) {
+    cachedAdminBotUser = username;
+    localStorage.setItem('telebot_admin_bot_username', username);
+  }
+  const linkEl = document.getElementById('contactAdminBotLink');
+  if (linkEl) {
+    linkEl.href = url;
+    if (username) {
+      linkEl.title = `@${username}`;
+    }
+  }
+}
+
+// Immediately apply cached link on load so button works with 0ms delay
+if (cachedAdminBotUrl) {
+  applyAdminBotLink(cachedAdminBotUrl, cachedAdminBotUser);
+}
+
+function openContactAdminBot(e) {
+  const linkEl = document.getElementById('contactAdminBotLink');
+  const curHref = (linkEl && linkEl.href) ? linkEl.href : '';
+  const validUrl = (curHref && curHref.startsWith('https://t.me/') && curHref !== 'https://t.me/')
+    ? curHref
+    : (cachedAdminBotUrl && cachedAdminBotUrl.startsWith('https://t.me/') && cachedAdminBotUrl !== 'https://t.me/' ? cachedAdminBotUrl : '');
+
+  if (validUrl) {
+    if (linkEl && linkEl.href !== validUrl) linkEl.href = validUrl;
+    // Allow native target="_blank" behavior - this works seamlessly on iOS, Android, and Desktop
+    return true;
+  }
+
+  if (e) {
+    try { e.preventDefault(); } catch (err) {}
+  }
+
+  fetch('/api/public/admin-contact?t=' + Date.now())
+    .then(res => res.json())
+    .then(data => {
+      const url = data.telegram_url || (data.bot_username ? `https://t.me/${data.bot_username}?start=request_id` : '');
+      if (url && url !== 'https://t.me/') {
+        applyAdminBotLink(url, data.bot_username);
+        window.open(url, '_blank') || (window.location.href = url);
+      } else {
+        alert('Admin Telegram Bot is not configured yet. Please check back later.');
+      }
+    })
+    .catch(() => {
+      window.open('https://t.me/TYvhlrz_bot?start=request_id', '_blank');
+    });
+  return false;
+}
+
+// Fresh background sync
+fetch('/api/public/admin-contact?t=' + Date.now())
+  .then(res => res.json())
+  .then(data => {
+    if (data && data.telegram_url) {
+      applyAdminBotLink(data.telegram_url, data.bot_username);
+    }
+  })
+  .catch(() => {});
+</script>
+</body>
+</html>

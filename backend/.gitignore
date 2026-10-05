@@ -1,1 +1,58 @@
+# Dependencies
+node_modules/
+package-lock.json.backup
+backups/
+*.tar.gz
+
+# Sensitive configuration & Credentials
+secret.key
+cookies.txt
+accounts.json
+users.json
+session_*.txt
+session_*.json
+*.session
+*.session-journal
+.env
+.env.local
+
+# Runtime Data & Queue state cache (Generated dynamically at runtime)
+global_ai_config.json
+queue_*.json
+raw_queue_*.json
+verified_queue_*.json
+sent_*.json
+skipped_*.json
+peers_*.json
+daily_dm_history.json
+api_pool.json
+bots_vault.json
+slot_requests.json
+*.bak
+*.bak2
+*.py
+
+# Temporary patch & helper scripts
+update_script*.sh
+patch_*.sh
+patch_*.py
+fix*.py
+clean_brackets.py
+reconstruct.py
+list_funcs.py
+list_py_funcs.py
+web_app.py
+*.cjs
+test-admin.js
+fix.js
+missing.ts
+server_recovered.ts
+user_dashboard.html
+bun.lock
+
+# System & IDE files
+.DS_Store
+*.log
+
 server.build.ts
+telebot.db*

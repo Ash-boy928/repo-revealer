@@ -1,7 +1,10 @@
-// ---------------- NON-BLOCKING DEBOUNCED ASYNC FILE WRITER ----------------
-const fileWriteDebounceMap = new Map<string, { getData: () => string | any; timer: NodeJS.Timeout | null }>();
+import fs from 'fs';
+import path from 'path';
 
-function asyncSaveJson(filePath: string, dataOrFn: any, delayMs = 1000): void {
+// ---------------- NON-BLOCKING DEBOUNCED ASYNC FILE WRITER ----------------
+export const fileWriteDebounceMap = new Map<string, { getData: () => string | any; timer: NodeJS.Timeout | null }>();
+
+export function asyncSaveJson(filePath: string, dataOrFn: any, delayMs = 1000): void {
   const getData = typeof dataOrFn === 'function' ? dataOrFn : () => dataOrFn;
   const existing = fileWriteDebounceMap.get(filePath);
 
@@ -25,7 +28,7 @@ function asyncSaveJson(filePath: string, dataOrFn: any, delayMs = 1000): void {
   fileWriteDebounceMap.set(filePath, { getData, timer });
 }
 
-function flushPendingFileWritesSync(): void {
+export function flushPendingFileWritesSync(): void {
   for (const [filePath, entry] of fileWriteDebounceMap.entries()) {
     if (entry.timer) clearTimeout(entry.timer);
     try {
@@ -40,5 +43,3 @@ function flushPendingFileWritesSync(): void {
 process.on('beforeExit', flushPendingFileWritesSync);
 process.on('SIGINT', () => { flushPendingFileWritesSync(); process.exit(0); });
 process.on('SIGTERM', () => { flushPendingFileWritesSync(); process.exit(0); });
-
-
