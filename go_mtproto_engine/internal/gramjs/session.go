@@ -3,7 +3,9 @@
 // logged-in accounts can be reused without a new OTP login.
 //
 // GramJS layout (version "1" + base64):
-//   dcId(1) | addrLen(2, BE) | addr(addrLen) | port(2, BE) | authKey(256)
+//
+//	dcId(1) | addrLen(2, BE) | addr(addrLen) | port(2, BE) | authKey(256)
+//
 // If addrLen > 100 the address is a raw 16-byte IPv6 instead.
 package gramjs
 

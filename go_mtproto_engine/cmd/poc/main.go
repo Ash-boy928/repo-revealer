@@ -8,10 +8,10 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/gotd/td/telegram/auth"
-	"github.com/gotd/td/tg"
 	"flag"
 	"fmt"
+	"github.com/gotd/td/telegram/auth"
+	"github.com/gotd/td/tg"
 	"log"
 	"math/rand"
 	"net"
@@ -27,6 +27,7 @@ import (
 	"github.com/gotd/td/tgerr"
 	"golang.org/x/net/proxy"
 
+	"leotelebot/go_mtproto_engine/internal/engine"
 	"leotelebot/go_mtproto_engine/internal/gramjs"
 )
 
@@ -93,7 +94,17 @@ func main() {
 	phone := flag.String("phone", "", "login with phone + OTP (e.g. +919999999999) instead of -session")
 	sessFile := flag.String("session-file", "go_session.json", "where OTP-login session is saved/reused")
 	idle := flag.Duration("idle", 30*time.Second, "stay connected for idle RAM measurement")
+	stream := flag.String("stream", "", "channel/group username or t.me link with active live stream")
+	limit := flag.Int("limit", 5, "max participants to DM from the live stream")
+	tpl := flag.String("spintax", "{Hi|Hello|Namaste} {name}, {kaise ho|kya haal hai}?", "DM template: {a|b} spin, {name}, {username}")
+	minDelay := flag.Duration("min-delay", 20*time.Second, "min delay between DMs")
+	maxDelay := flag.Duration("max-delay", 45*time.Second, "max delay between DMs")
+	dryRun := flag.Bool("dry-run", false, "only list stream participants, send nothing")
+	spamCheck := flag.Bool("spamcheck", false, "check @SpamBot status before running")
 	flag.Parse()
+	if *maxDelay < *minDelay {
+		*maxDelay = *minDelay
+	}
 
 	if *apiID == 0 || *apiHash == "" {
 		log.Fatal("required: -api-id, -api-hash")
@@ -158,6 +169,61 @@ func main() {
 		}
 		log.Printf("connected as id=%d @%s %s", self.ID, self.Username, self.FirstName)
 		mem("connected")
+
+		if *spamCheck {
+			free, reply, err := engine.CheckSpamBot(ctx, client.API())
+			if err != nil {
+				log.Printf("SpamBot check failed: %v", err)
+			} else {
+				log.Printf("SpamBot free=%v reply=%q", free, reply)
+				if !free && *stream != "" {
+					return errors.New("account limited by SpamBot; campaign aborted to protect the ID")
+				}
+			}
+		}
+
+		if *stream != "" {
+			users, err := engine.ScrapeLiveStream(ctx, client.API(), *stream, *limit, self.ID)
+			if err != nil && len(users) == 0 {
+				return err
+			}
+			log.Printf("live stream %s: %d DM-able participants", *stream, len(users))
+			for i, u := range users {
+				log.Printf("  #%d id=%d @%s %s", i+1, u.ID, u.Username, u.FirstName)
+			}
+			if *dryRun {
+				log.Print("dry-run: no DMs sent")
+				return nil
+			}
+			sender := message.NewSender(client.API())
+			sent := 0
+			for i, u := range users {
+				txt := engine.Spin(*tpl, u.FirstName, u.Username)
+				_, err := sender.To(u.Peer()).Text(ctx, txt)
+				if d, ok := tgerr.AsFloodWait(err); ok {
+					log.Printf("FLOOD_WAIT %s — stopping campaign", d)
+					break
+				}
+				if tgerr.Is(err, "PEER_FLOOD") {
+					log.Print("PEER_FLOOD — account limited, stopping campaign")
+					break
+				}
+				if err != nil {
+					log.Printf("  skip id=%d: %v", u.ID, err)
+				} else {
+					sent++
+					log.Printf("  DM %d/%d sent to id=%d @%s: %q", sent, len(users), u.ID, u.Username, txt)
+				}
+				if i < len(users)-1 {
+					d := *minDelay + time.Duration(rand.Int63n(int64(*maxDelay-*minDelay)+1))
+					log.Printf("  waiting %s", d.Round(time.Second))
+					time.Sleep(d)
+				}
+			}
+			log.Printf("campaign done: %d/%d sent", sent, len(users))
+			mem("after-campaign")
+			return nil
+		}
 
 		if *to != "" {
 			// small human-like jitter before sending
