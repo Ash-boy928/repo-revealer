@@ -56,7 +56,7 @@ func ScrapeLiveStream(ctx context.Context, api *tg.Client, target string, max in
 	offset := ""
 	for len(out) < max {
 		pr, err := api.PhoneGetGroupParticipants(ctx, &tg.PhoneGetGroupParticipantsRequest{
-			Call: call, Ids: []tg.InputPeerClass{}, Sources: []int{}, Offset: offset, Limit: 100,
+			Call: call, IDs: []tg.InputPeerClass{}, Sources: []int{}, Offset: offset, Limit: 100,
 		})
 		if err != nil {
 			return out, fmt.Errorf("get participants: %w", err)

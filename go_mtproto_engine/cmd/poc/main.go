@@ -8,10 +8,10 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/gotd/td/telegram/auth"
-	"github.com/gotd/td/tg"
 	"flag"
 	"fmt"
+	"github.com/gotd/td/telegram/auth"
+	"github.com/gotd/td/tg"
 	"log"
 	"math/rand"
 	"net"
