@@ -38,6 +38,44 @@ func ScrapeLiveStream(ctx context.Context, api *tg.Client, target string, max in
 	if ch == nil {
 		return nil, fmt.Errorf("%s is not a channel/supergroup", target)
 	}
+	return scrapeChannel(ctx, api, ch, max, selfID)
+}
+
+// AutoDetectLiveStream scans the account's joined channels/groups and returns
+// participants of the first one with an active live stream / voice chat.
+func AutoDetectLiveStream(ctx context.Context, api *tg.Client, max int, selfID int64) (string, []Participant, error) {
+	res, err := api.MessagesGetDialogs(ctx, &tg.MessagesGetDialogsRequest{
+		OffsetPeer: &tg.InputPeerEmpty{}, Limit: 100,
+	})
+	if err != nil {
+		return "", nil, fmt.Errorf("get dialogs: %w", err)
+	}
+	var chats []tg.ChatClass
+	switch d := res.(type) {
+	case *tg.MessagesDialogs:
+		chats = d.Chats
+	case *tg.MessagesDialogsSlice:
+		chats = d.Chats
+	}
+	for _, c := range chats {
+		ch, ok := c.(*tg.Channel)
+		if !ok || !ch.CallActive {
+			continue
+		}
+		users, err := scrapeChannel(ctx, api, ch, max, selfID)
+		if err != nil && len(users) == 0 {
+			continue
+		}
+		name := ch.Username
+		if name == "" {
+			name = ch.Title
+		}
+		return name, users, nil
+	}
+	return "", nil, fmt.Errorf("no active live stream found in joined channels/groups")
+}
+
+func scrapeChannel(ctx context.Context, api *tg.Client, ch *tg.Channel, max int, selfID int64) ([]Participant, error) {
 	full, err := api.ChannelsGetFullChannel(ctx, &tg.InputChannel{ChannelID: ch.ID, AccessHash: ch.AccessHash})
 	if err != nil {
 		return nil, fmt.Errorf("get full channel: %w", err)
@@ -48,7 +86,7 @@ func ScrapeLiveStream(ctx context.Context, api *tg.Client, target string, max in
 	}
 	call, ok := cf.GetCall()
 	if !ok || call == nil {
-		return nil, fmt.Errorf("no active live stream / voice chat in %s", target)
+		return nil, fmt.Errorf("no active live stream / voice chat in %s", ch.Title)
 	}
 
 	seen := map[int64]bool{}

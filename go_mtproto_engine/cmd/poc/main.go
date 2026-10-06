@@ -183,9 +183,21 @@ func main() {
 		}
 
 		if *stream != "" {
-			users, err := engine.ScrapeLiveStream(ctx, client.API(), *stream, *limit, self.ID)
-			if err != nil && len(users) == 0 {
-				return err
+			var users []engine.Participant
+			if *stream == "auto" {
+				log.Print("auto-detecting live stream in joined channels/groups...")
+				name, u, err := engine.AutoDetectLiveStream(ctx, client.API(), *limit, self.ID)
+				if err != nil {
+					return err
+				}
+				log.Printf("live stream detected: %s", name)
+				users = u
+			} else {
+				u, err := engine.ScrapeLiveStream(ctx, client.API(), *stream, *limit, self.ID)
+				if err != nil && len(u) == 0 {
+					return err
+				}
+				users = u
 			}
 			log.Printf("live stream %s: %d DM-able participants", *stream, len(users))
 			for i, u := range users {
@@ -196,7 +208,7 @@ func main() {
 				return nil
 			}
 			sender := message.NewSender(client.API())
-			sent := 0
+			sent, skipped := 0, 0
 			for i, u := range users {
 				txt := engine.Spin(*tpl, u.FirstName, u.Username)
 				_, err := sender.To(u.Peer()).Text(ctx, txt)
@@ -208,7 +220,13 @@ func main() {
 					log.Print("PEER_FLOOD — account limited, stopping campaign")
 					break
 				}
+				if r := engine.SkipReason(err); r != "" {
+					skipped++
+					log.Printf("  [SKIP] id=%d @%s: %s — next user, no delay", u.ID, u.Username, r)
+					continue
+				}
 				if err != nil {
+					skipped++
 					log.Printf("  skip id=%d: %v", u.ID, err)
 				} else {
 					sent++
@@ -220,7 +238,7 @@ func main() {
 					time.Sleep(d)
 				}
 			}
-			log.Printf("campaign done: %d/%d sent", sent, len(users))
+			log.Printf("campaign done: %d sent, %d skipped, %d total", sent, skipped, len(users))
 			mem("after-campaign")
 			return nil
 		}
