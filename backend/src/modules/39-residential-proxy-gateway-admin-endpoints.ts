@@ -45,7 +45,8 @@ app.get('/api/admin/proxy', (req, res) => {
 
 app.post('/api/admin/proxy/save', (req, res) => {
   const data = req.body || {};
-  masterProxyConfig = {
+  // FIX: imported bindings are read-only in ES modules; update the shared object in place.
+  Object.assign(masterProxyConfig, {
     enabled: Boolean(data.enabled),
     protocol: data.protocol === 'http' ? 'http' : 'socks5',
     host: (data.host || '').trim(),

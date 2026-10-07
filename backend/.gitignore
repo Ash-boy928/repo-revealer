@@ -56,3 +56,7 @@ bun.lock
 
 server.build.ts
 telebot.db*
+
+*.db
+*.db-wal
+*.db-shm
