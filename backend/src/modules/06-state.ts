@@ -7,10 +7,19 @@ function getISTDateString() {
 }
 let lastResetDateIST = getISTDateString();
 
-setInterval(() => {
+setInterval(async () => {
   const currentIST = getISTDateString();
   if (currentIST !== lastResetDateIST) {
+    const finishedDate = lastResetDateIST;
     lastResetDateIST = currentIST;
+
+    // Dispatch 12:00 AM midnight daily activity report for the finished day
+    try {
+      await sendMidnightDailyActivityReportToUsers(finishedDate);
+    } catch (err) {
+      console.error('[SYSTEM] Error sending midnight activity report:', err);
+    }
+
     for (const [phone, a] of accounts.entries()) {
       a.daily_extracted_count = 0;
       (a as any).daily_extracted_date = currentIST;

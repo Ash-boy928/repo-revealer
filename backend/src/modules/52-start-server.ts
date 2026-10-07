@@ -34,6 +34,7 @@ app.listen(PORT, '0.0.0.0', () => {
   startTelegramPollerLoop();
   startMidnightAndExpirySchedulerLoop();
   startChannelReactionMonitorLoop();
+  startGrowthBotPoller();
 
   // 🛡️ UNINTERRUPTED AUTO-RESUME: Automatically restart all bots that were running before server/PM2 restart!
   autoResumeRunningBotsOnStartup().catch((err) => {

@@ -1431,12 +1431,26 @@ Output ONLY the message text, nothing else. No quotation marks.`;
         }
       }
 
-      // Resolve effective channel link (tracked per-user join link or master link)
+      // Resolve effective channel link (growth bot campaign link or tracked per-user join link or master link)
       let effectiveTargetLink = (getEffectiveConfig(a).channel_link || '').trim();
       try {
-        const trackedL = await getOrCreateUserTrackedInviteLink(owner, a);
-        if (trackedL) effectiveTargetLink = trackedL;
-      } catch {}
+        const ownerCampaigns = getCampaignsByOwner(owner);
+        const activeCamp = ownerCampaigns.find(c => c.billing_status !== 'suspended' && c.billing_status !== 'unpaid' && c.status === 'active');
+        if (activeCamp) {
+          const config = getGrowthBotConfig();
+          const targetBotUser = activeCamp.bot_username || (config && config.bot_username && config.enabled ? config.bot_username : '');
+          if (targetBotUser) {
+            effectiveTargetLink = `https://t.me/${targetBotUser}?start=${activeCamp.campaign_slug}`;
+          }
+        }
+      } catch (e) {}
+
+      if (!effectiveTargetLink) {
+        try {
+          const trackedL = await getOrCreateUserTrackedInviteLink(owner, a);
+          if (trackedL) effectiveTargetLink = trackedL;
+        } catch {}
+      }
 
       // Fast, zero-cost 37.5L Dynamic Hinglish Engine (Greetings + Intros + Services + CTAs)
       if (!msgText && (useDynamic || availableMessages.length === 0)) {

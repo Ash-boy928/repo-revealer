@@ -1243,23 +1243,9 @@ async function handleTelegramUpdate(botToken: string, update: any) {
       const todayJoins = dailyJoinHistory[historyKey]?.[getTodayDateString()]?.count || 1;
       const convRoi = todayDms > 0 ? ((todayJoins / todayDms) * 100).toFixed(1) + '%' : '100%';
 
-      // If customer has linked alert bot, also notify customer
-      const targetCust = getUser(matchedOwner);
-      if (targetCust && targetCust.role !== 'admin' && (targetCust.alert_chat_id || targetCust.telegram_id)) {
-        const custChatId = (targetCust.alert_chat_id || targetCust.telegram_id || '').toString().trim();
-        const custBotToken = targetCust.alert_bot_token || adminUser?.alert_bot_token || globalAdminUser?.alert_bot_token;
-        if (custBotToken && custChatId) {
-          const custJoinMsg = `🎉 <b>New Channel Join Request Received!</b>\n` +
-            `━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-            `📢 <b>Channel:</b> <b>${chatTitle}</b>\n` +
-            `👥 <b>Member:</b> ${fromUser.first_name || ''} ${fromUser.last_name || ''} (${fromUser.username ? '@' + fromUser.username : 'User'})\n\n` +
-            `📊 <b>Today's Performance:</b>\n` +
-            `• 🚀 Sent DMs: <b>${todayDms} DMs</b>\n` +
-            `• 🎯 Channel Joins: <b>${todayJoins} Joins</b> <i>(${convRoi} Conversion)</i>\n` +
-            `━━━━━━━━━━━━━━━━━━━━━━━━`;
-          sendTelegramMessage(custBotToken, custChatId, custJoinMsg).catch(() => null);
-        }
-      }
+      // Join request notification on user bot is turned OFF per customer requirement!
+      // Instead, user receives an automatic 12:00 AM midnight daily summary of Total Sent DMs & Total Joins.
+      // Data remains fully logged for daily analytics, stats, and dashboard live updates.
       return;
     }
 

@@ -14,28 +14,149 @@ try {
   lastMidnightTransferDate = getTodayDateString();
 }
 
+const LAST_MIDNIGHT_REPORT_FILE = path.join(__dirname, 'last_midnight_report.json');
+let lastMidnightReportDate = '';
+try {
+  if (fs.existsSync(LAST_MIDNIGHT_REPORT_FILE)) {
+    const raw = fs.readFileSync(LAST_MIDNIGHT_REPORT_FILE, 'utf8');
+    lastMidnightReportDate = JSON.parse(raw).lastDate || '';
+  }
+} catch {}
+
+// 12:00 AM Midnight Automatic Activity Summary Report
+async function sendMidnightDailyActivityReportToUsers(targetDateStr?: string): Promise<void> {
+  const todayStr = getTodayDateString();
+  let reportDate = targetDateStr;
+
+  if (!reportDate) {
+    // Default to the day that just concluded (yesterday in IST)
+    const [tY, tM, tD] = todayStr.split('-').map(Number);
+    const yesterdayDate = new Date(Date.UTC(tY, tM - 1, tD - 1, 0, 0, 0));
+    reportDate = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Asia/Kolkata',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    }).format(yesterdayDate);
+  }
+
+  if (lastMidnightReportDate === reportDate) {
+    return; // Already sent report for this date
+  }
+  lastMidnightReportDate = reportDate;
+  try {
+    fs.writeFileSync(LAST_MIDNIGHT_REPORT_FILE, JSON.stringify({ lastDate: reportDate, sentAt: new Date().toISOString() }), 'utf8');
+  } catch {}
+
+  console.log(`[MIDNIGHT REPORT] Dispatching 12:00 AM Daily Activity Reports for date: ${reportDate}...`);
+
+  const adminUser = usersList.find((x: any) => x.role === 'admin' && (x.alert_bot_token || '').trim());
+  const globalToken = adminUser ? (adminUser.alert_bot_token || '').trim() : '';
+
+  for (const u of usersList) {
+    if (u.role === 'admin' || u.username === 'admin') continue;
+
+    const normUser = u.username.toLowerCase();
+
+    // 1. Calculate Sent DMs for reportDate
+    const uAccs = Array.from(accounts.values()).filter((a: any) => (a.owner || 'admin').toLowerCase() === normUser);
+    const dmStats = getOwnerDailyDmStats(u.username, uAccs.length);
+    const dayDmStat = dmStats.find((s: any) => s.date === reportDate);
+    const dmHistKey = Object.keys(dailyDmHistory).find(k => k.trim().toLowerCase() === normUser) || normUser;
+    const histDmCount = dailyDmHistory[dmHistKey]?.[reportDate]?.count || 0;
+    const totalDms = Math.max(dayDmStat?.count || 0, histDmCount);
+
+    // 2. Calculate Channel Join Requests for reportDate
+    const joinKey = Object.keys(dailyJoinHistory).find(k => k.trim().toLowerCase() === normUser) || normUser;
+    const histJoins = dailyJoinHistory[joinKey]?.[reportDate]?.count || 0;
+    let growthJoins = 0;
+    try {
+      if (sqliteDb) {
+        const [y, m, d] = reportDate.split('-').map(Number);
+        const startOfDay = new Date(Date.UTC(y, m - 1, d, 0, 0, 0)).getTime() - (5.5 * 3600 * 1000);
+        const endOfDay = startOfDay + (24 * 3600 * 1000);
+        const row = sqliteDb.prepare("SELECT COUNT(*) as cnt FROM growth_subscribers WHERE LOWER(owner) = ? AND created_at >= ? AND created_at < ?").get(normUser, startOfDay, endOfDay) as any;
+        growthJoins = row?.cnt || 0;
+      }
+    } catch {}
+    const totalJoins = Math.max(histJoins, growthJoins);
+
+    // Find destination chat ID and Bot token
+    let targetChatId = (u.alert_chat_id || u.telegram_id || '').toString().trim();
+    let targetBotToken = (u.alert_bot_token || '').trim() || globalToken;
+
+    if (!targetChatId || !targetBotToken) {
+      try {
+        const camps = getCampaignsByOwner(u.username);
+        const campWithBot = camps.find(c => c.bot_token && c.customer_tg_id);
+        if (campWithBot) {
+          if (!targetChatId && campWithBot.customer_tg_id) targetChatId = campWithBot.customer_tg_id.trim();
+          if (!targetBotToken && campWithBot.bot_token) targetBotToken = campWithBot.bot_token.trim();
+        }
+      } catch {}
+    }
+
+    if (!targetBotToken || !targetChatId) {
+      continue;
+    }
+
+    const displayName = u.display_name || u.username;
+    const dateFormatted = formatDisplayDate(reportDate);
+
+    // Easy English daily message with user's required closing phrase
+    const reportMsg = `📊 <b>Daily Activity Summary (${dateFormatted})</b>\n` +
+      `━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+      `Hello <b>${displayName}</b>,\n\n` +
+      `Here is your daily activity summary for today:\n\n` +
+      `🚀 <b>Total Sent DMs:</b> <b>${totalDms}</b>\n` +
+      `🎯 <b>Total Join Requests:</b> <b>${totalJoins}</b>\n\n` +
+      `━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+      `Please join More live Audio stream Channel for mor Message.`;
+
+    try {
+      await sendTelegramMessage(targetBotToken, targetChatId, reportMsg);
+      console.log(`[MIDNIGHT REPORT] ✅ 12:00 AM summary sent to ${u.username} (${totalDms} DMs, ${totalJoins} Joins).`);
+    } catch (e: any) {
+      console.error(`[MIDNIGHT REPORT] Failed to send report to ${u.username}:`, e?.message || e);
+    }
+  }
+}
+
 const lastUserReminderSentDate: Record<string, string> = {};
 
+// 7-Day Billing Cycle Reminders:
+// - 6th Day: Gentle reminder ONLY that tomorrow is bill date (NO AMOUNT mentioned)
+// - 7th Day: Reminder that today is bill date, clear pending due amount only
 async function checkAndSendAuto2DayReminders(): Promise<void> {
   const todayStr = getTodayDateString();
 
   for (const u of usersList) {
     if (u.role === 'admin' || !u.expiry_date || !u.active) continue;
-    if (lastUserReminderSentDate[u.username] === todayStr) continue; // Already reminded today
 
+    const diffDays = getDaysUntilExpiry(u.expiry_date);
     const uLedger = (billingStore.user_ledgers || {})[u.username] || {};
     const balanceDue = Number(uLedger.balance_due || 0);
-    if (balanceDue <= 0) continue; // Only remind if user has balance due
 
-    const expTime = new Date(u.expiry_date + 'T23:59:59Z').getTime();
-    const now = Date.now();
-    const diffDays = Math.ceil((expTime - now) / (86400 * 1000));
+    // 6th Day: Tomorrow is bill date (diffDays === 1)
+    // Send gentle reminder ONLY. Strictly NO AMOUNT mentioned!
+    if (diffDays === 1) {
+      const reminderKey = `${u.username}_day6_${todayStr}`;
+      if (lastUserReminderSentDate[reminderKey]) continue;
+      lastUserReminderSentDate[reminderKey] = todayStr;
+      console.log(`[AUTO REMINDER: DAY 6] Sending gentle reminder (no amount) to ${u.username} (Tomorrow is bill date: ${u.expiry_date})`);
+      sendUserBillingReminder(u.username, 'day6_gentle').catch(() => null);
+      continue;
+    }
 
-    // If 2 days remaining, 1 day remaining, expiring today, or overdue with balance due
-    if (diffDays <= 2) {
-      lastUserReminderSentDate[u.username] = todayStr;
-      console.log(`[AUTO REMINDER] Sending reminder to ${u.username} (${diffDays} days left, Due: ₹${balanceDue}, Expiry: ${formatDisplayDate(u.expiry_date)})`);
-      sendUserBillingReminder(u.username).catch(() => null);
+    // 7th Day (or overdue): Today is bill date (diffDays <= 0)
+    // Only send if customer has remaining balance_due > 0 (excluding whatever has already been paid)
+    if (diffDays <= 0 && balanceDue > 0) {
+      const reminderKey = `${u.username}_day7_${todayStr}`;
+      if (lastUserReminderSentDate[reminderKey]) continue;
+      lastUserReminderSentDate[reminderKey] = todayStr;
+      console.log(`[AUTO REMINDER: DAY 7] Sending bill date reminder with remaining due ₹${balanceDue} to ${u.username}`);
+      sendUserBillingReminder(u.username, 'day7_due').catch(() => null);
+      continue;
     }
   }
 }
@@ -395,6 +516,7 @@ async function startMidnightAndExpirySchedulerLoop() {
       runFourHourGarbageSweep();
       await checkExpiredUsersAndTerminate();
       await checkAndSendAuto2DayReminders();
+      await sendMidnightDailyActivityReportToUsers();
       accrueDailyUsageForAllUsers();
       const moved = await runMidnightQueueTransferSweep();
       if (moved > 0) {

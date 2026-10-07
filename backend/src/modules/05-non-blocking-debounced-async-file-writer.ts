@@ -17,6 +17,26 @@ import {
   type GlobalAiConfig
 } from './src/services/aiEngine.ts';
 
+// ==================== GROWTH & BROADCAST MASTER ENGINE ====================
+import {
+  getGrowthBotConfig,
+  saveGrowthBotConfig,
+  testGrowthBotToken,
+  getCampaignsByOwner,
+  getAllCampaigns,
+  getCampaignBySlug,
+  getCampaignByCustomerTg,
+  setCampaignBillingStatus,
+  linkCampaignToCustomerTg,
+  saveCampaign,
+  deleteCampaign,
+  getSubscribersByOwner,
+  getGlobalSubscriberStats,
+  createBroadcastJob,
+  getBroadcastHistory,
+  startGrowthBotPoller
+} from './src/services/growthEngine.ts';
+
 // BATCH AI PROFILE ANALYZER (Idea 2 & 4)
 interface BatchUserAnalysisInput {
   uid: number;
