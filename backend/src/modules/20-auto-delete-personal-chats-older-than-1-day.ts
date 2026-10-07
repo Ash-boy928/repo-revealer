@@ -148,6 +148,22 @@ setInterval(() => {
   } catch {}
 }, 3 * 60 * 1000);
 
+// 🛡️ PROACTIVE OOM WATCHDOG (Checks memory every 30s to prevent Linux kernel OOM Killer from terminating process)
+setInterval(() => {
+  try {
+    const freeMb = Math.round(os.freemem() / 1024 / 1024);
+    const procMem = process.memoryUsage();
+    const rssMb = Math.round(procMem.rss / 1024 / 1024);
+
+    // If host system free RAM is critical (< 140MB) or Node process uses > 500MB on low-memory VPS
+    if (freeMb < 140 || rssMb > 500) {
+      console.warn(`⚠️ [OOM GUARD] Critical memory threshold: Host Free: ${freeMb}MB, Node RSS: ${rssMb}MB. Executing emergency compaction...`);
+      const res = optimizeProcessMemory();
+      console.log(`🛡️ [OOM GUARD] Emergency compaction freed memory: RSS ${res.rssBeforeMb}MB -> ${res.rssAfterMb}MB.`);
+    }
+  } catch {}
+}, 30 * 1000);
+
 // 🧹 30-MINUTE BACKGROUND CRON: Periodically auto-cleans personal chats older than 24 hours (1 day)
 setInterval(async () => {
   try {

@@ -357,6 +357,21 @@ function formatDisplayDate(dateStr: string | number | Date | null | undefined): 
   }
 }
 
+function getDaysUntilExpiry(expiryDateStr: string): number {
+  if (!expiryDateStr) return 999;
+  try {
+    const todayStr = getTodayDateString();
+    const [tY, tM, tD] = todayStr.split('-').map(Number);
+    const [eY, eM, eD] = expiryDateStr.split('-').map(Number);
+    if (!tY || !tM || !tD || !eY || !eM || !eD) return 999;
+    const todayUtc = Date.UTC(tY, tM - 1, tD);
+    const expUtc = Date.UTC(eY, eM - 1, eD);
+    return Math.round((expUtc - todayUtc) / (86400 * 1000));
+  } catch {
+    return 999;
+  }
+}
+
 function getUserCycleDateRange(u: any): { startDate: string; expiryDate: string; formattedRange: string; daysRemaining: number } {
   if (!u) return { startDate: '', expiryDate: '', formattedRange: 'Active', daysRemaining: 999 };
   const expStr = (u.expiry_date || '').toString().trim();
@@ -380,12 +395,7 @@ function getUserCycleDateRange(u: any): { startDate: string; expiryDate: string;
   }
   const startFormatted = formatDisplayDate(startStr);
 
-  let daysRemaining = 0;
-  try {
-    const expDate = new Date(expStr + 'T23:59:59Z');
-    const now = Date.now();
-    daysRemaining = Math.ceil((expDate.getTime() - now) / (86400 * 1000));
-  } catch {}
+  const daysRemaining = getDaysUntilExpiry(expStr);
 
   const formattedRange = `${startFormatted} ➔ ${expFormatted} (${cycleDays} Days)`;
   return { startDate: startStr, expiryDate: expStr, formattedRange, daysRemaining };

@@ -202,6 +202,283 @@ app.post('/api/admin/ai-config/auto-detect-key', async (req: any, res: any) => {
   });
 });
 
+// ==================== GROWTH & BROADCAST MASTER ENGINE ROUTES ====================
+// 1. Admin Growth Bot Config & Status
+app.get('/api/admin/growth/config', (req: any, res: any) => {
+  if (!isAdminSession(req)) {
+    return res.status(403).json({ success: false, error: 'Access denied. Super Admin required.' });
+  }
+  const config = getGrowthBotConfig();
+  res.json({ success: true, config });
+});
+
+app.post('/api/admin/growth/config', (req: any, res: any) => {
+  if (!isAdminSession(req)) {
+    return res.status(403).json({ success: false, error: 'Access denied. Super Admin required.' });
+  }
+  const { bot_token, bot_username, enabled, global_broadcast_delay_ms } = req.body || {};
+  const updated = saveGrowthBotConfig({
+    bot_token: bot_token !== undefined ? String(bot_token).trim() : undefined,
+    bot_username: bot_username !== undefined ? String(bot_username).trim().replace(/^@/, '') : undefined,
+    enabled: enabled !== undefined ? Boolean(enabled) : undefined,
+    global_broadcast_delay_ms: global_broadcast_delay_ms !== undefined ? Number(global_broadcast_delay_ms) : undefined
+  });
+  res.json({ success: true, msg: 'Master Growth Bot configuration saved!', config: updated });
+});
+
+app.post('/api/admin/growth/test-token', async (req: any, res: any) => {
+  if (!isAdminSession(req)) {
+    return res.status(403).json({ success: false, error: 'Access denied. Super Admin required.' });
+  }
+  const { bot_token } = req.body || {};
+  const result = await testGrowthBotToken(bot_token);
+  res.json(result);
+});
+
+app.get('/api/admin/growth/overview', (req: any, res: any) => {
+  if (!isAdminSession(req)) {
+    return res.status(403).json({ success: false, error: 'Access denied. Super Admin required.' });
+  }
+  const stats = getGlobalSubscriberStats();
+  const campaigns = getAllCampaigns();
+  const config = getGrowthBotConfig();
+  res.json({ success: true, stats, campaigns, bot_username: config.bot_username });
+});
+
+// 2. User Growth Campaigns & Link Generator
+app.get('/api/user/growth/bot-info', (req: any, res: any) => {
+  const sessionUser = getSessionUser(req);
+  if (!sessionUser) return res.status(401).json({ ok: false, msg: 'Not logged in' });
+  const config = getGrowthBotConfig();
+  res.json({
+    ok: true,
+    bot_configured: Boolean(config.bot_token && config.enabled),
+    bot_username: config.bot_username || ''
+  });
+});
+
+app.get('/api/user/growth/campaigns', (req: any, res: any) => {
+  const sessionUser = getSessionUser(req);
+  if (!sessionUser) return res.status(401).json({ ok: false, msg: 'Not logged in' });
+  const currentUser = req.session?.view_as || sessionUser.username;
+  const campaigns = getCampaignsByOwner(currentUser);
+  const config = getGrowthBotConfig();
+  res.json({
+    ok: true,
+    bot_username: config.bot_username,
+    campaigns
+  });
+});
+
+app.post('/api/user/growth/campaigns/save', (req: any, res: any) => {
+  const sessionUser = getSessionUser(req);
+  if (!sessionUser) return res.status(401).json({ ok: false, msg: 'Not logged in' });
+  const currentUser = req.session?.view_as || sessionUser.username;
+  const result = saveCampaign(currentUser, req.body || {});
+  if (!result.ok) {
+    return res.status(400).json(result);
+  }
+  const config = getGrowthBotConfig();
+  const deepLink = config.bot_username && result.campaign?.campaign_slug
+    ? `https://t.me/${config.bot_username}?start=${result.campaign.campaign_slug}`
+    : '';
+  res.json({ ok: true, campaign: result.campaign, deep_link: deepLink });
+});
+
+app.post('/api/user/growth/campaigns/delete', (req: any, res: any) => {
+  const sessionUser = getSessionUser(req);
+  if (!sessionUser) return res.status(401).json({ ok: false, msg: 'Not logged in' });
+  const currentUser = req.session?.view_as || sessionUser.username;
+  const { id } = req.body || {};
+  if (!id) return res.status(400).json({ ok: false, msg: 'Campaign ID required' });
+  const ok = deleteCampaign(id, currentUser);
+  res.json({ ok, msg: ok ? 'Campaign deleted' : 'Failed to delete campaign' });
+});
+
+// Admin Authority: Billing Kill-Switch & Customer Telegram Linking
+app.post('/api/admin/growth/campaigns/toggle-billing', (req: any, res: any) => {
+  const sessionUser = getSessionUser(req);
+  if (!sessionUser || sessionUser.role !== 'admin') {
+    return res.status(403).json({ ok: false, msg: 'Admin authority required' });
+  }
+  const { slug, status, notes } = req.body || {};
+  if (!slug || !status) return res.status(400).json({ ok: false, msg: 'Slug and status required' });
+  const ok = setCampaignBillingStatus(slug, status, notes);
+  res.json({ ok, msg: ok ? `Campaign billing status updated to ${status}` : 'Failed to update billing status' });
+});
+
+app.post('/api/admin/growth/campaigns/link-customer', (req: any, res: any) => {
+  const sessionUser = getSessionUser(req);
+  if (!sessionUser || sessionUser.role !== 'admin') {
+    return res.status(403).json({ ok: false, msg: 'Admin authority required' });
+  }
+  const { slug, customer_tg_id } = req.body || {};
+  if (!slug || !customer_tg_id) return res.status(400).json({ ok: false, msg: 'Slug and customer_tg_id required' });
+  const ok = linkCampaignToCustomerTg(slug, customer_tg_id);
+  res.json({ ok, msg: ok ? `Campaign linked to Telegram user: ${customer_tg_id}` : 'Failed to link customer' });
+});
+
+// 3. User Subscribers & Analytics
+app.get('/api/user/growth/subscribers', (req: any, res: any) => {
+  const sessionUser = getSessionUser(req);
+  if (!sessionUser) return res.status(401).json({ ok: false, msg: 'Not logged in' });
+  const currentUser = req.session?.view_as || sessionUser.username;
+  const limit = Math.min(Number(req.query.limit) || 200, 500);
+  const offset = Number(req.query.offset) || 0;
+  const data = getSubscribersByOwner(currentUser, limit, offset);
+  res.json({ ok: true, ...data });
+});
+
+// 4. User Broadcast Studio
+app.post('/api/user/growth/broadcast/send', (req: any, res: any) => {
+  const sessionUser = getSessionUser(req);
+  if (!sessionUser) return res.status(401).json({ ok: false, msg: 'Not logged in' });
+  const currentUser = req.session?.view_as || sessionUser.username;
+
+  const { campaign_name, message_text, media_type, media_url, buttons_json, target_filter } = req.body || {};
+  if (!message_text || !String(message_text).trim()) {
+    return res.status(400).json({ ok: false, msg: 'Message text is required for broadcast' });
+  }
+
+  const result = createBroadcastJob(currentUser, {
+    campaign_name: String(campaign_name || 'Quick Broadcast').trim(),
+    message_text: String(message_text).trim(),
+    media_type: media_type === 'photo' ? 'photo' : 'text',
+    media_url: media_url ? String(media_url).trim() : '',
+    buttons_json: buttons_json ? String(buttons_json).trim() : '',
+    target_filter: target_filter || 'all'
+  });
+
+  if (!result.ok) {
+    return res.status(400).json(result);
+  }
+  res.json({ ok: true, msg: 'Broadcast job started successfully in background queue!', job: result.job });
+});
+
+app.get('/api/user/growth/broadcast/history', (req: any, res: any) => {
+  const sessionUser = getSessionUser(req);
+  if (!sessionUser) return res.status(401).json({ ok: false, msg: 'Not logged in' });
+  const currentUser = req.session?.view_as || sessionUser.username;
+  const history = getBroadcastHistory(currentUser, 50);
+  res.json({ ok: true, history });
+});
+
+// 5. Direct Gallery Screenshot / Image / Video / Audio Upload
+app.post('/api/user/growth/upload-media', (req: any, res: any) => {
+  const sessionUser = getSessionUser(req);
+  if (!sessionUser) return res.status(401).json({ ok: false, msg: 'Not logged in' });
+
+  const { file_data, file_type, previous_url, filename } = req.body || {};
+  if (!file_data || typeof file_data !== 'string') {
+    return res.status(400).json({ ok: false, msg: 'No file data provided' });
+  }
+
+  try {
+    const matches = file_data.match(/^data:([^;]+);base64,(.+)$/);
+    if (!matches || matches.length !== 3) {
+      return res.status(400).json({ ok: false, msg: 'Invalid file format. Base64 data URL expected.' });
+    }
+
+    const mimeType = matches[1].toLowerCase();
+    const base64Data = matches[2];
+    const buffer = Buffer.from(base64Data, 'base64');
+
+    // Auto-detect extension based on MIME
+    let ext = '.bin';
+    if (mimeType.includes('png')) ext = '.png';
+    else if (mimeType.includes('webp')) ext = '.webp';
+    else if (mimeType.includes('gif')) ext = '.gif';
+    else if (mimeType.includes('jpeg') || mimeType.includes('jpg')) ext = '.jpg';
+    else if (mimeType.includes('mp4')) ext = '.mp4';
+    else if (mimeType.includes('webm')) ext = '.webm';
+    else if (mimeType.includes('quicktime') || mimeType.includes('mov')) ext = '.mov';
+    else if (mimeType.includes('mp3') || mimeType.includes('mpeg')) ext = '.mp3';
+    else if (mimeType.includes('wav')) ext = '.wav';
+    else if (mimeType.includes('ogg')) ext = '.ogg';
+    else if (mimeType.includes('m4a')) ext = '.m4a';
+    else if (file_type === 'video') ext = '.mp4';
+    else if (file_type === 'audio') ext = '.mp3';
+    else if (file_type === 'photo') ext = '.jpg';
+
+    // Delete previous upload if replacing
+    if (previous_url && typeof previous_url === 'string' && (previous_url.startsWith('/uploads/') || previous_url.startsWith('uploads/'))) {
+      try {
+        const oldPath = path.join(process.cwd(), previous_url.replace(/^\//, ''));
+        if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+      } catch (e) {}
+    }
+
+    const prefix = file_type ? `growth_${file_type}` : 'growth_file';
+    const cleanName = `${prefix}_${Date.now()}_${crypto.randomBytes(4).toString('hex')}${ext}`;
+    const filePath = path.join(UPLOADS_DIR, cleanName);
+
+    fs.writeFileSync(filePath, buffer);
+
+    const relativeUrl = `/uploads/${cleanName}`;
+    return res.json({
+      ok: true,
+      url: relativeUrl,
+      media_url: relativeUrl,
+      file_type: file_type || 'file',
+      size_bytes: buffer.length,
+      msg: 'File uploaded successfully!'
+    });
+  } catch (err: any) {
+    console.error('upload-media error:', err);
+    return res.status(500).json({ ok: false, msg: 'Failed to save uploaded file: ' + err.message });
+  }
+});
+
+app.post('/api/user/growth/upload-image', (req: any, res: any) => {
+  const sessionUser = getSessionUser(req);
+  if (!sessionUser) return res.status(401).json({ ok: false, msg: 'Not logged in' });
+
+  const { image_data, filename, previous_url } = req.body || {};
+  if (!image_data || typeof image_data !== 'string') {
+    return res.status(400).json({ ok: false, msg: 'No image data provided' });
+  }
+
+  try {
+    const matches = image_data.match(/^data:([A-Za-z0-9\-\+\/]+);base64,(.+)$/);
+    if (!matches || matches.length !== 3) {
+      return res.status(400).json({ ok: false, msg: 'Invalid image format. Base64 expected.' });
+    }
+
+    const mimeType = matches[1];
+    const base64Data = matches[2];
+    const buffer = Buffer.from(base64Data, 'base64');
+
+    let ext = '.jpg';
+    if (mimeType.includes('png')) ext = '.png';
+    else if (mimeType.includes('webp')) ext = '.webp';
+    else if (mimeType.includes('gif')) ext = '.gif';
+
+    // Delete old if replacing
+    if (previous_url && typeof previous_url === 'string' && (previous_url.startsWith('/uploads/') || previous_url.startsWith('uploads/'))) {
+      try {
+        const oldPath = path.join(process.cwd(), previous_url.replace(/^\//, ''));
+        if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+      } catch (e) {}
+    }
+
+    const cleanName = `growth_${Date.now()}_${crypto.randomBytes(4).toString('hex')}${ext}`;
+    const filePath = path.join(UPLOADS_DIR, cleanName);
+
+    fs.writeFileSync(filePath, buffer);
+
+    const relativeUrl = `/uploads/${cleanName}`;
+    return res.json({
+      ok: true,
+      url: relativeUrl,
+      media_url: relativeUrl,
+      msg: 'Image uploaded successfully from gallery!'
+    });
+  } catch (err: any) {
+    console.error('upload-image error:', err);
+    return res.status(500).json({ ok: false, msg: 'Failed to save image: ' + err.message });
+  }
+});
+
 app.post('/api/admin/ai-config/test', async (req: any, res: any) => {
   if (!isAdminSession(req)) {
     return res.status(403).json({ success: false, error: 'Access denied. Super Admin required.' });

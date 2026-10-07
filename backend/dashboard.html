@@ -71,8 +71,8 @@ body{background:#0c131d;background:radial-gradient(circle at 50% 0%,#162338 0%,#
 .btn-circle-logout:active{transform:scale(.93)}
 
 /* Stats Row */
-.stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
-.stat{border-radius:16px;padding:14px 10px;text-align:center;backdrop-filter:blur(10px);box-shadow:0 4px 16px rgba(0,0,0,.3);transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease}
+.stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+.stat{border-radius:16px;padding:14px 8px;text-align:center;backdrop-filter:blur(10px);box-shadow:0 4px 16px rgba(0,0,0,.3);transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease;cursor:default}
 .stat:hover{transform:translateY(-2px)}
 .stat b{font-size:22px;font-weight:800;display:block;margin-bottom:2px;letter-spacing:-0.5px}
 .stat span{font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:.8px;font-weight:700;white-space:nowrap}
@@ -393,7 +393,7 @@ textarea{height:68px;resize:vertical;line-height:1.5}
   .btn-circle-logout{width:30px;height:30px;font-size:13px}
 
   /* Compact stats strip for mobile (1 row) */
-  .stat-row{gap:4px;margin-bottom:8px;width:100%;grid-template-columns:repeat(3, 1fr)}
+  .stat-row{gap:4px;margin-bottom:8px;width:100%;grid-template-columns:repeat(4, 1fr)}
   .stat{padding:6px 4px;border-radius:10px;min-width:0}
   .stat b{font-size:16px;margin-bottom:0}
   .stat span{font-size:8px;letter-spacing:0.1px}
@@ -496,7 +496,7 @@ textarea{height:68px;resize:vertical;line-height:1.5}
 <div id="toastContainer"></div>
 <div class="container">
   <!-- Top App Header -->
-  <div class="header">
+  <div class="header" id="mainAppHeader">
     <div class="header-top">
       <div class="header-title-wrap">
         <div class="header-logo-badge">🦁</div>
@@ -541,97 +541,589 @@ textarea{height:68px;resize:vertical;line-height:1.5}
     <button class="hbtn" onclick="backToAdmin()">Back to Admin View</button>
   </div>
 
-  <!-- DYNAMIC EXPIRY & PAYMENT WARNING ALERT BANNER -->
-  <div id="planExpiryAlertBanner" style="display:none;margin:12px 16px 0 16px;border-radius:12px;padding:12px 16px;position:relative;animation:fadeIn 0.3s ease;">
-    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
-      <div style="display:flex;align-items:center;gap:10px;">
-        <span id="expiryAlertIcon" style="font-size:24px;line-height:1;">⚠️</span>
-        <div>
-          <div id="expiryAlertTitle" style="font-weight:800;font-size:14px;letter-spacing:0.3px;"></div>
-          <div id="expiryAlertDesc" style="font-size:12px;opacity:0.9;margin-top:2px;"></div>
+  <!-- MAIN DASHBOARD ROOT VIEW -->
+  <div id="mainDashboardView">
+    <!-- DYNAMIC EXPIRY & PAYMENT WARNING ALERT BANNER -->
+    <div id="planExpiryAlertBanner" style="display:none;margin:12px 16px 0 16px;border-radius:12px;padding:12px 16px;position:relative;animation:fadeIn 0.3s ease;">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span id="expiryAlertIcon" style="font-size:24px;line-height:1;">⚠️</span>
+          <div>
+            <div id="expiryAlertTitle" style="font-weight:800;font-size:14px;letter-spacing:0.3px;"></div>
+            <div id="expiryAlertDesc" style="font-size:12px;opacity:0.9;margin-top:2px;"></div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span id="expiryAlertCountdownBadge" style="padding:4px 10px;border-radius:20px;font-size:12px;font-weight:800;"></span>
+          <button id="expiryAlertPayBtn" style="background:#10b981;color:#fff;border:none;border-radius:8px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:4px;" onclick="promptClientPayInfo()">
+            <span>💳 Pay Now</span>
+          </button>
         </div>
       </div>
-      <div style="display:flex;align-items:center;gap:8px;">
-        <span id="expiryAlertCountdownBadge" style="padding:4px 10px;border-radius:20px;font-size:12px;font-weight:800;"></span>
-        <button id="expiryAlertPayBtn" style="background:#10b981;color:#fff;border:none;border-radius:8px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:4px;" onclick="promptClientPayInfo()">
-          <span>💳 Pay Now</span>
+    </div>
+
+    <!-- Summary Statistics (3 Cards Row) -->
+    <div class="stat-row">
+      <div class="stat stat-today" title="Click to reset Today's DM counter to 0 for all accounts" style="cursor:pointer;" onclick="promptResetTodayDms()"><b id="todaySent">0</b><span style="display:flex;align-items:center;justify-content:center;gap:4px;">Today DMs <span style="font-size:11px;opacity:0.75;">🔄</span></span></div>
+      <div class="stat stat-run"><b id="runCount">0</b><span>Running</span></div>
+      <div class="stat stat-acc"><b id="accCount">0</b><span>Accounts</span></div>
+    </div>
+
+    <!-- Fleet Quick Controls (All Bot Start, All DM On/Off, All Live On/Off) -->
+    <div class="fleet-controls-card">
+      <div class="fleet-header">
+        <div class="fleet-title">
+          <span class="fleet-icon">⚡</span>
+          <div>
+            <b>All Accounts Quick Control</b>
+            <p>Control all your Telegram accounts simultaneously with 1 click</p>
+          </div>
+        </div>
+        <span class="fleet-badge" id="fleetRunningBadge">0 / 0 Running</span>
+      </div>
+      <div class="fleet-btn-grid">
+        <!-- 1. Bot Master Toggle Button -->
+        <button id="userFleetBotBtn" class="btn-fleet btn-fleet-green" onclick="toggleUserBots()">
+          <span id="userFleetBotIcon" style="font-size:16px;">▶️</span>
+          <div style="display:flex;flex-direction:column;align-items:flex-start;line-height:1.2;">
+            <b id="userFleetBotTitle">Start All Bots</b>
+            <span id="userFleetBotSub" style="font-size:10px;opacity:0.85;font-weight:600;">All Stopped</span>
+          </div>
+        </button>
+
+        <!-- 2. DM Master Toggle Button -->
+        <button id="userFleetDmBtn" class="btn-fleet btn-fleet-blue" onclick="toggleUserDms()">
+          <span id="userFleetDmIcon" style="font-size:16px;">✉️</span>
+          <div style="display:flex;flex-direction:column;align-items:flex-start;line-height:1.2;">
+            <b id="userFleetDmTitle">All DM ON</b>
+            <span id="userFleetDmSub" style="font-size:10px;opacity:0.85;font-weight:600;">DM Paused</span>
+          </div>
+        </button>
+
+        <!-- 3. Live Stream Master Toggle Button -->
+        <button id="userFleetLiveBtn" class="btn-fleet btn-fleet-purple" onclick="toggleUserLive()">
+          <span id="userFleetLiveIcon" style="font-size:16px;">🎙️</span>
+          <div style="display:flex;flex-direction:column;align-items:flex-start;line-height:1.2;">
+            <b id="userFleetLiveTitle">All Live ON</b>
+            <span id="userFleetLiveSub" style="font-size:10px;opacity:0.85;font-weight:600;">Live Paused</span>
+          </div>
         </button>
       </div>
     </div>
-  </div>
 
-  <!-- Summary Statistics -->
-  <div class="stat-row">
-    <div class="stat stat-today" title="Click to reset Today's DM counter to 0 for all accounts" style="cursor:pointer;" onclick="promptResetTodayDms()"><b id="todaySent">0</b><span style="display:flex;align-items:center;justify-content:center;gap:4px;">Today DMs <span style="font-size:11px;opacity:0.75;">🔄</span></span></div>
-    <div class="stat stat-run"><b id="runCount">0</b><span>Running</span></div>
-    <div class="stat stat-acc"><b id="accCount">0</b><span>Accounts</span></div>
-  </div>
+    <!-- Accounts Tabs Navigation -->
+    <div class="tabs-wrap">
+      <div class="tabs-label">
+        <span>Telegram Accounts</span>
+        <span id="tabCountHint"></span>
+      </div>
+      <!-- Search Bar for Telegram Accounts -->
+      <div style="margin-bottom:10px;">
+        <input type="text" id="accSearchInput" placeholder="🔍 Search account by name or phone (+91...)" oninput="filterAccountsTab()" style="width:100%;padding:9px 12px;border-radius:10px;border:1px solid rgba(148,163,184,0.22);background:rgba(12,19,29,0.9);color:#fff;font-size:13px;outline:none;">
+      </div>
+      <div id="tabs" class="tabs"></div>
+      <div id="fixedTabs" style="display:flex; gap:10px; margin-top:12px; flex-wrap:wrap;"></div>
+    </div>
 
-  <!-- Fleet Quick Controls (All Bot Start, All DM On/Off, All Live On/Off) -->
-  <div class="fleet-controls-card">
-    <div class="fleet-header">
-      <div class="fleet-title">
-        <span class="fleet-icon">⚡</span>
+    <!-- Main Dynamic Area -->
+    <div id="detail"></div>
+
+    <!-- Footer Credit -->
+    <div class="footer-note">LIVE MONITOR &amp; DM AUTOMATION SYSTEM</div>
+    <div class="credit">
+      <span>Design By</span>
+      <b>Ash_King</b>
+    </div>
+  </div> <!-- /#mainDashboardView -->
+
+  <!-- ==================== DEDICATED FULL-PAGE FORCE-JOIN & BROADCAST STUDIO ==================== -->
+  <div id="growthStudioPage" style="display:none;width:100%;margin-top:4px;animation:fadeIn 0.25s ease;">
+    
+    <!-- Top Compact Navigation & Header Bar -->
+    <div style="background:linear-gradient(135deg,rgba(15,23,42,0.95),rgba(24,36,53,0.95));border:1.5px solid rgba(56,189,248,0.35);border-radius:14px;padding:10px 14px;margin-bottom:12px;box-shadow:0 6px 20px rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+      
+      <div style="display:flex;align-items:center;gap:10px;">
+        <button onclick="closeGrowthStudioPage()" style="background:rgba(56,189,248,0.14);border:1px solid rgba(56,189,248,0.35);color:#38bdf8;padding:6px 12px;border-radius:8px;font-size:11.5px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:4px;box-shadow:0 0 8px rgba(56,189,248,0.15);transition:all .2s;" onmouseover="this.style.background='rgba(56,189,248,0.25)'" onmouseout="this.style.background='rgba(56,189,248,0.14)'">
+          <span style="font-size:13px;">⬅️</span>
+          <span>Back to Dashboard</span>
+        </button>
+
         <div>
-          <b>All Accounts Quick Control</b>
-          <p>Control all your Telegram accounts simultaneously with 1 click</p>
+          <h2 style="margin:0;font-size:15px;color:#fff;font-weight:800;letter-spacing:0.2px;">🚀 Force-Join Bot &amp; Broadcast Studio</h2>
+          <p style="margin:1px 0 0 0;font-size:11px;color:#94a3b8;">Create Telegram force-join links &amp; send rich broadcast updates</p>
         </div>
       </div>
-      <span class="fleet-badge" id="fleetRunningBadge">0 / 0 Running</span>
+
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span id="growthPageBotStatus" style="font-size:11px;font-weight:700;color:#4ade80;background:rgba(34,197,94,0.12);border:1px solid rgba(34,197,94,0.3);padding:4px 10px;border-radius:14px;">
+          🟢 Active Gateway Bot
+        </span>
+        <button onclick="refreshGrowthStudioData(true)" style="background:rgba(148,163,184,0.12);border:1px solid rgba(148,163,184,0.25);color:#cbd5e1;padding:5px 10px;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:4px;">
+          <span>🔄 Refresh</span>
+        </button>
+      </div>
+
     </div>
-    <div class="fleet-btn-grid">
-      <!-- 1. Bot Master Toggle Button -->
-      <button id="userFleetBotBtn" class="btn-fleet btn-fleet-green" onclick="toggleUserBots()">
-        <span id="userFleetBotIcon" style="font-size:16px;">▶️</span>
-        <div style="display:flex;flex-direction:column;align-items:flex-start;line-height:1.2;">
-          <b id="userFleetBotTitle">Start All Bots</b>
-          <span id="userFleetBotSub" style="font-size:10px;opacity:0.85;font-weight:600;">All Stopped</span>
-        </div>
-      </button>
 
-      <!-- 2. DM Master Toggle Button -->
-      <button id="userFleetDmBtn" class="btn-fleet btn-fleet-blue" onclick="toggleUserDms()">
-        <span id="userFleetDmIcon" style="font-size:16px;">✉️</span>
-        <div style="display:flex;flex-direction:column;align-items:flex-start;line-height:1.2;">
-          <b id="userFleetDmTitle">All DM ON</b>
-          <span id="userFleetDmSub" style="font-size:10px;opacity:0.85;font-weight:600;">DM Paused</span>
-        </div>
+    <!-- Navigation Subtabs Bar -->
+    <div style="display:flex;gap:8px;margin-bottom:14px;overflow-x:auto;padding-bottom:4px;">
+      <button id="growthPageTabBtn_links" class="tab tab-active" onclick="switchGrowthPageTab('links')" style="font-size:12.5px;padding:8px 16px;border-radius:12px;gap:6px;">
+        <span>🔗 Force-Join Links &amp; Generator</span>
       </button>
-
-      <!-- 3. Live Stream Master Toggle Button -->
-      <button id="userFleetLiveBtn" class="btn-fleet btn-fleet-purple" onclick="toggleUserLive()">
-        <span id="userFleetLiveIcon" style="font-size:16px;">🎙️</span>
-        <div style="display:flex;flex-direction:column;align-items:flex-start;line-height:1.2;">
-          <b id="userFleetLiveTitle">All Live ON</b>
-          <span id="userFleetLiveSub" style="font-size:10px;opacity:0.85;font-weight:600;">Live Paused</span>
-        </div>
+      <button id="growthPageTabBtn_subscribers" class="tab" onclick="switchGrowthPageTab('subscribers')" style="font-size:12.5px;padding:8px 16px;border-radius:12px;gap:6px;">
+        <span>👥 Captured Subscribers (<span id="growthPageSubscribersBadge">0</span>)</span>
+      </button>
+      <button id="growthPageTabBtn_broadcast" class="tab" onclick="switchGrowthPageTab('broadcast')" style="font-size:12.5px;padding:8px 16px;border-radius:12px;gap:6px;">
+        <span>📢 Rich Broadcast Studio</span>
       </button>
     </div>
-  </div>
 
-  <!-- Accounts Tabs Navigation -->
-  <div class="tabs-wrap">
-    <div class="tabs-label">
-      <span>Telegram Accounts</span>
-      <span id="tabCountHint"></span>
+    <!-- Subtab 1: Force-Join Links & Generator -->
+    <div id="growthPageTab_links" style="display:block;">
+      
+      <div style="display:grid;grid-template-columns:1.2fr 0.8fr;gap:20px;align-items:start;" class="dash-grid">
+        
+        <!-- Left: Generator Form -->
+        <div class="card" style="background:rgba(15,23,42,0.85);border:1.5px solid rgba(148,163,184,0.18);border-radius:18px;padding:20px;box-shadow:0 10px 30px rgba(0,0,0,0.4);">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;border-bottom:1px solid rgba(148,163,184,0.12);padding-bottom:10px;">
+            <b style="font-size:14.5px;color:#fff;" id="growthPageFormTitle">⚡ Create Force-Join &amp; Rich Auto-DM Gate</b>
+            <button onclick="resetGrowthCampaignForm()" style="background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.3);color:#38bdf8;padding:4px 10px;border-radius:8px;font-size:11.5px;cursor:pointer;font-weight:700;">+ New Campaign</button>
+          </div>
+          <input type="hidden" id="growthCampaignId" value="">
+
+          <!-- Basic Info -->
+          <div style="margin-bottom:12px;">
+            <label style="font-size:12px;font-weight:700;color:#94a3b8;display:block;margin-bottom:5px;">Campaign Title (Internal Name):</label>
+            <input type="text" id="growthCampaignTitle" placeholder="e.g. VIP Trading Signals / Setup Gateway" oninput="updateGrowthPhonePreview()" style="width:100%;padding:9px 12px;border-radius:10px;border:1px solid rgba(148,163,184,0.22);background:rgba(10,16,28,0.85);color:#fff;font-size:13px;outline:none;box-sizing:border-box;">
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+            <div>
+              <label style="font-size:12px;font-weight:700;color:#94a3b8;display:block;margin-bottom:5px;">Target Channel / Group (@):</label>
+              <input type="text" id="growthChannelUsername" placeholder="e.g. @MyVipChannel or link" oninput="updateGrowthPhonePreview()" style="width:100%;padding:9px 12px;border-radius:10px;border:1px solid rgba(148,163,184,0.22);background:rgba(10,16,28,0.85);color:#4ade80;font-weight:700;font-size:13px;outline:none;box-sizing:border-box;">
+            </div>
+            <div>
+              <label style="font-size:12px;font-weight:700;color:#94a3b8;display:block;margin-bottom:5px;">Custom Link Slug (Deep Link):</label>
+              <input type="text" id="growthCampaignSlug" placeholder="e.g. c_rohit_vip" style="width:100%;padding:9px 12px;border-radius:10px;border:1px solid rgba(148,163,184,0.22);background:rgba(10,16,28,0.85);color:#38bdf8;font-family:monospace;font-size:12.5px;outline:none;box-sizing:border-box;">
+            </div>
+          </div>
+
+          <!-- Customer Telegram Access & In-App Control Mapping -->
+          <div style="background:rgba(56,189,248,0.06);border:1px solid rgba(56,189,248,0.2);border-radius:12px;padding:10px 12px;margin-bottom:12px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+              <label style="font-size:12px;font-weight:700;color:#38bdf8;">👤 Customer Telegram Username / ID (Direct App Customization):</label>
+              <span style="font-size:10.5px;color:#94a3b8;">Customer types <code>/menu</code> in bot</span>
+            </div>
+            <input type="text" id="growthCustomerTgId" placeholder="e.g. @Ashraf_VIP or numeric Telegram ID" style="width:100%;padding:8px 12px;border-radius:8px;border:1px solid rgba(56,189,248,0.25);background:rgba(10,16,28,0.9);color:#fff;font-size:12.5px;outline:none;box-sizing:border-box;">
+            <div style="font-size:11px;color:#94a3b8;margin-top:4px;">
+              💡 Customer direct Telegram me bot ko <code>/menu</code> bhej kar text, channel link aur video/audio customize kar sakega.
+            </div>
+          </div>
+
+          <!-- Media Upload Section (Gallery/Files) -->
+          <div style="background:rgba(10,16,28,0.7);border:1px solid rgba(148,163,184,0.15);border-radius:14px;padding:12px;margin-bottom:14px;">
+            <div style="font-size:12px;font-weight:800;color:#38bdf8;margin-bottom:8px;display:flex;align-items:center;gap:6px;">
+              <span>📁 Auto DM Media Files (Choose from Gallery / Device)</span>
+            </div>
+
+            <!-- 1. Screenshot / Photo -->
+            <div style="margin-bottom:10px;">
+              <label style="font-size:11.5px;font-weight:700;color:#94a3b8;display:block;margin-bottom:4px;">1. Banner / Screenshot Photo:</label>
+              <input type="file" id="growthBannerFileInput" accept="image/*" style="display:none;" onchange="handleGrowthBannerFileSelect(event)">
+              <input type="hidden" id="growthBannerUrl" value="">
+              <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+                <button type="button" onclick="document.getElementById('growthBannerFileInput').click()" style="background:linear-gradient(135deg,rgba(56,189,248,0.15),rgba(37,99,235,0.25));border:1.2px dashed rgba(56,189,248,0.5);color:#38bdf8;padding:6px 12px;border-radius:8px;font-size:11.5px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:5px;">
+                  <span>🖼️ Choose Photo from Gallery</span>
+                </button>
+                <button type="button" id="growthBannerClearBtn" onclick="clearGrowthBannerImage()" style="display:none;background:rgba(239,68,68,0.15);color:#f87171;border:1px solid rgba(239,68,68,0.3);padding:6px 9px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;">✕ Clear</button>
+                <span id="growthBannerFileNameHint" style="font-size:11px;color:#4ade80;display:none;"></span>
+              </div>
+            </div>
+
+            <!-- 2. Setup Video File -->
+            <div style="margin-bottom:10px;border-top:1px solid rgba(148,163,184,0.1);padding-top:8px;">
+              <label style="font-size:11.5px;font-weight:700;color:#94a3b8;display:block;margin-bottom:4px;">2. Setup Video File (MP4, WEBM, MOV):</label>
+              <input type="file" id="growthVideoFileInput" accept="video/*" style="display:none;" onchange="handleGrowthVideoFileSelect(event)">
+              <input type="hidden" id="growthVideoUrl" value="">
+              <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:6px;">
+                <button type="button" onclick="document.getElementById('growthVideoFileInput').click()" style="background:linear-gradient(135deg,rgba(168,85,247,0.15),rgba(147,51,234,0.25));border:1.2px dashed rgba(168,85,247,0.5);color:#c084fc;padding:6px 12px;border-radius:8px;font-size:11.5px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:5px;">
+                  <span>🎬 Choose Video from Gallery / Files</span>
+                </button>
+                <button type="button" id="growthVideoClearBtn" onclick="clearGrowthVideoFile()" style="display:none;background:rgba(239,68,68,0.15);color:#f87171;border:1px solid rgba(239,68,68,0.3);padding:6px 9px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;">✕ Clear Video</button>
+                <span id="growthVideoFileNameHint" style="font-size:11px;color:#c084fc;display:none;"></span>
+              </div>
+              <input type="text" id="growthVideoCaption" placeholder="Video Caption (e.g. ✅ NEW HACK How To Activate Hack ✅ Pls Video Pura Dekhna)" oninput="updateGrowthPhonePreview()" style="width:100%;padding:7px 10px;border-radius:8px;border:1px solid rgba(148,163,184,0.2);background:rgba(15,23,42,0.8);color:#cbd5e1;font-size:12px;outline:none;box-sizing:border-box;">
+            </div>
+
+            <!-- 3. Audio / Voice Guide -->
+            <div style="border-top:1px solid rgba(148,163,184,0.1);padding-top:8px;">
+              <label style="font-size:11.5px;font-weight:700;color:#94a3b8;display:block;margin-bottom:4px;">3. Audio / Voice Guide (MP3, M4A, WAV, OGG):</label>
+              <input type="file" id="growthAudioFileInput" accept="audio/*" style="display:none;" onchange="handleGrowthAudioFileSelect(event)">
+              <input type="hidden" id="growthAudioUrl" value="">
+              <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+                <button type="button" onclick="document.getElementById('growthAudioFileInput').click()" style="background:linear-gradient(135deg,rgba(34,197,94,0.15),rgba(16,185,129,0.25));border:1.2px dashed rgba(34,197,94,0.5);color:#4ade80;padding:6px 12px;border-radius:8px;font-size:11.5px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:5px;">
+                  <span>🎙️ Choose Audio from Device</span>
+                </button>
+                <button type="button" id="growthAudioClearBtn" onclick="clearGrowthAudioFile()" style="display:none;background:rgba(239,68,68,0.15);color:#f87171;border:1px solid rgba(239,68,68,0.3);padding:6px 9px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;">✕ Clear Audio</button>
+                <span id="growthAudioFileNameHint" style="font-size:11px;color:#4ade80;display:none;"></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Personal Chat Contact Button Redirect Settings -->
+          <div style="background:rgba(10,16,28,0.7);border:1px solid rgba(148,163,184,0.15);border-radius:14px;padding:12px;margin-bottom:14px;">
+            <div style="font-size:12px;font-weight:800;color:#f59e0b;margin-bottom:8px;display:flex;align-items:center;gap:6px;">
+              <span>💬 Personal Chat Redirect Button (Customer Direct Chat)</span>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:8px;">
+              <div>
+                <label style="font-size:11px;font-weight:700;color:#94a3b8;display:block;margin-bottom:3px;">Your Personal Telegram (@):</label>
+                <input type="text" id="growthContactUsername" placeholder="e.g. AshiqKing (without @)" oninput="updateGrowthPhonePreview()" style="width:100%;padding:7px 10px;border-radius:8px;border:1px solid rgba(148,163,184,0.2);background:rgba(15,23,42,0.8);color:#fbbf24;font-weight:700;font-size:12px;outline:none;box-sizing:border-box;">
+              </div>
+              <div>
+                <label style="font-size:11px;font-weight:700;color:#94a3b8;display:block;margin-bottom:3px;">Button Title Text:</label>
+                <input type="text" id="growthContactButtonText" value="🚀 DM FOR LOSS RECOVERY" oninput="updateGrowthPhonePreview()" style="width:100%;padding:7px 10px;border-radius:8px;border:1px solid rgba(148,163,184,0.2);background:rgba(15,23,42,0.8);color:#fff;font-size:12px;outline:none;box-sizing:border-box;">
+              </div>
+            </div>
+            <div>
+              <label style="font-size:11px;font-weight:700;color:#94a3b8;display:block;margin-bottom:3px;">Pre-Filled Chat Message (Auto-typed when user clicks):</label>
+              <input type="text" id="growthContactPrefillText" value="Hello Sir, I want VIP Setup & Loss Recovery" style="width:100%;padding:7px 10px;border-radius:8px;border:1px solid rgba(148,163,184,0.2);background:rgba(15,23,42,0.8);color:#cbd5e1;font-size:12px;outline:none;box-sizing:border-box;">
+            </div>
+          </div>
+
+          <!-- Multiple Custom Inline Buttons Builder (Size & Action Customize) -->
+          <div style="background:rgba(10,16,28,0.7);border:1px solid rgba(148,163,184,0.15);border-radius:14px;padding:12px;margin-bottom:14px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+              <div style="font-size:12px;font-weight:800;color:#38bdf8;display:flex;align-items:center;gap:6px;">
+                <span>🔘 Custom Inline Buttons Builder (Add Multiple / Size / Popup Alert)</span>
+              </div>
+              <button type="button" onclick="addGrowthCustomButton()" style="background:linear-gradient(135deg,#0284c7,#2563eb);color:#fff;border:none;padding:4px 10px;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:4px;">
+                <span>+ Add Button</span>
+              </button>
+            </div>
+            <div id="growthCustomButtonsContainer" style="display:flex;flex-direction:column;gap:8px;">
+              <!-- Dynamic custom buttons will be rendered here -->
+            </div>
+          </div>
+
+          <!-- VIP Formatting & Custom Emoji Toolbar -->
+          <div style="background:rgba(15,23,42,0.8);border:1px solid rgba(56,189,248,0.2);border-radius:10px;padding:8px 10px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;">
+            <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;">
+              <span style="font-size:11px;font-weight:700;color:#94a3b8;margin-right:2px;">✨ Quick VIP:</span>
+              <button type="button" onclick="insertVipEmoji('⭐️')" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#fff;padding:2px 6px;border-radius:6px;font-size:11px;cursor:pointer;">⭐️</button>
+              <button type="button" onclick="insertVipEmoji('👑')" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#fff;padding:2px 6px;border-radius:6px;font-size:11px;cursor:pointer;">👑</button>
+              <button type="button" onclick="insertVipEmoji('🔥')" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#fff;padding:2px 6px;border-radius:6px;font-size:11px;cursor:pointer;">🔥</button>
+              <button type="button" onclick="insertVipEmoji('💎')" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#fff;padding:2px 6px;border-radius:6px;font-size:11px;cursor:pointer;">💎</button>
+              <button type="button" onclick="insertVipEmoji('🚀')" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#fff;padding:2px 6px;border-radius:6px;font-size:11px;cursor:pointer;">🚀</button>
+              <button type="button" onclick="insertVipEmoji('💰')" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#fff;padding:2px 6px;border-radius:6px;font-size:11px;cursor:pointer;">💰</button>
+              <button type="button" onclick="insertVipEmoji('💯')" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#fff;padding:2px 6px;border-radius:6px;font-size:11px;cursor:pointer;">💯</button>
+              <button type="button" onclick="insertVipEmoji('⚡')" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#fff;padding:2px 6px;border-radius:6px;font-size:11px;cursor:pointer;">⚡</button>
+              <button type="button" onclick="insertVipEmoji('🎬')" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#fff;padding:2px 6px;border-radius:6px;font-size:11px;cursor:pointer;">🎬</button>
+              <button type="button" onclick="insertVipEmoji('🎁')" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#fff;padding:2px 6px;border-radius:6px;font-size:11px;cursor:pointer;">🎁</button>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;">
+              <button type="button" onclick="convertTextToVipFont('growthLockMessage')" style="background:rgba(168,85,247,0.15);border:1px solid rgba(168,85,247,0.35);color:#c084fc;padding:3px 8px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;">
+                💎 VIP Bold Font
+              </button>
+              <button type="button" onclick="insertTgCustomEmojiTag()" style="background:rgba(56,189,248,0.15);border:1px solid rgba(56,189,248,0.35);color:#38bdf8;padding:3px 8px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;" title="Telegram Custom Animated Emoji Tag">
+                ⭐ &lt;tg-emoji&gt;
+              </button>
+            </div>
+          </div>
+
+          <!-- Messages -->
+          <div style="margin-bottom:12px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+              <label style="font-size:12px;font-weight:700;color:#94a3b8;">Auto-DM Greeting &amp; Join Request Message:</label>
+              <span style="font-size:10.5px;color:#38bdf8;background:rgba(56,189,248,0.12);padding:1px 6px;border-radius:4px;">{first_name} Supported</span>
+            </div>
+            <textarea id="growthLockMessage" rows="3" oninput="updateGrowthPhonePreview()" style="width:100%;padding:9px 12px;border-radius:10px;border:1px solid rgba(148,163,184,0.22);background:rgba(10,16,28,0.85);color:#fff;font-size:12px;outline:none;resize:vertical;box-sizing:border-box;font-family:inherit;min-height:75px;">⭐️ &lt;b&gt;HELLO {first_name}&lt;/b&gt; ⭐️&#10;⭐️ &lt;b&gt;AAPKI REQUEST JALDI HI APPROVE HO JAYEGI&lt;/b&gt; ⭐️&#10;&#10;⭐️ &lt;b&gt;SETUP VIDEO &amp; HACK APK NEECHE DIYA GAYA HAI&lt;/b&gt; ⭐️&#10;Tab tak ye setup video dekho, audio suno aur direct admin se contact karo!</textarea>
+          </div>
+
+          <div style="margin-bottom:14px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+              <label style="font-size:12px;font-weight:700;color:#94a3b8;">Secret Unlocked Content (Revealed after verified):</label>
+              <span style="font-size:10.5px;color:#4ade80;background:rgba(34,197,94,0.12);padding:1px 6px;border-radius:4px;">Verified Delivery</span>
+            </div>
+            <textarea id="growthUnlockContent" rows="3" style="width:100%;padding:9px 12px;border-radius:10px;border:1px solid rgba(148,163,184,0.22);background:rgba(10,16,28,0.85);color:#4ade80;font-size:12px;outline:none;resize:vertical;box-sizing:border-box;font-family:inherit;min-height:65px;">⭐️ &lt;b&gt;HELLO {first_name}&lt;/b&gt; ⭐️&#10;⭐️ &lt;b&gt;AAPKI MEMBERSHIP VERIFY HO GAYI HAI!&lt;/b&gt; ⭐️&#10;&#10;Access granted to all VIP tools!</textarea>
+          </div>
+
+          <button onclick="saveGrowthCampaign()" style="width:100%;background:linear-gradient(135deg,#0284c7,#2563eb);color:#fff;border:none;padding:12px 18px;border-radius:12px;font-size:13.5px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 0 20px rgba(56,189,248,0.35);">
+            <span>⚡ Save Campaign &amp; Generate Deep Link</span>
+          </button>
+        </div>
+
+        <!-- Right: Live Interactive Phone Preview -->
+        <div>
+          <div style="font-size:13px;font-weight:700;color:#94a3b8;margin-bottom:10px;display:flex;align-items:center;gap:6px;">
+            <span>📱 Live Telegram Auto-DM Preview (What Users See)</span>
+          </div>
+
+          <div style="background:#0f172a;border:2px solid rgba(56,189,248,0.35);border-radius:26px;padding:18px;box-shadow:0 16px 40px rgba(0,0,0,0.6);display:flex;flex-direction:column;min-height:420px;">
+            
+            <!-- Mock Phone Header -->
+            <div style="display:flex;align-items:center;gap:10px;border-bottom:1px solid rgba(148,163,184,0.15);padding-bottom:10px;margin-bottom:12px;">
+              <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#0284c7,#2563eb);display:flex;align-items:center;justify-content:center;font-size:15px;">🤖</div>
+              <div>
+                <div style="font-size:13px;font-weight:800;color:#fff;" id="previewBotName">Master Gateway Bot</div>
+                <div style="font-size:10px;color:#38bdf8;">bot • official service</div>
+              </div>
+            </div>
+
+            <!-- Mock Telegram Message Bubble -->
+            <div style="background:#1e293b;border-radius:14px;padding:12px;color:#f1f5f9;font-size:12.5px;line-height:1.5;margin-bottom:10px;box-shadow:0 4px 14px rgba(0,0,0,0.25);">
+              <div id="previewBannerWrap" style="display:none;margin-bottom:8px;border-radius:8px;overflow:hidden;">
+                <img id="previewBannerImg" src="" style="width:100%;max-height:140px;object-fit:cover;">
+              </div>
+              <div id="previewMessageText" style="white-space:pre-wrap;">⭐️ <b>HELLO Mhd Ashraf</b> ⭐️<br>⭐️ <b>AAPKI REQUEST JALDI HI APPROVE HO JAYEGI</b> ⭐️<br><br>⭐️ <b>SETUP VIDEO & HACK APK NEECHE DIYA GAYA HAI</b> ⭐️</div>
+            </div>
+
+            <!-- Mock Video Bubble (if video attached) -->
+            <div id="previewVideoCard" style="display:none;background:#1e293b;border:1px solid rgba(168,85,247,0.3);border-radius:12px;padding:10px;margin-bottom:8px;">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <div style="width:32px;height:32px;border-radius:8px;background:rgba(168,85,247,0.2);display:flex;align-items:center;justify-content:center;color:#c084fc;font-size:16px;">▶️</div>
+                <div style="flex:1;min-width:0;">
+                  <div style="font-size:11.5px;font-weight:700;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" id="previewVideoLabel">Setup Video Attached</div>
+                  <div style="font-size:10px;color:#94a3b8;" id="previewVideoCaptionText">Watch full tutorial</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Mock Audio Bubble (if audio attached) -->
+            <div id="previewAudioCard" style="display:none;background:#1e293b;border:1px solid rgba(34,197,94,0.3);border-radius:12px;padding:8px 10px;margin-bottom:10px;">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <div style="width:28px;height:28px;border-radius:50%;background:rgba(34,197,94,0.2);display:flex;align-items:center;justify-content:center;color:#4ade80;font-size:13px;">🎙️</div>
+                <div style="flex:1;min-width:0;">
+                  <div style="font-size:11px;font-weight:700;color:#fff;">Voice Guide Attached</div>
+                  <div style="font-size:9.5px;color:#4ade80;">0:45 • Voice Message</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Mock Inline Keyboard Buttons -->
+            <div style="display:flex;flex-direction:column;gap:6px;margin-top:auto;" id="previewButtonsContainer">
+              <!-- 1. Personal Chat Direct Redirect Button -->
+              <button id="previewContactBtn" style="background:linear-gradient(135deg,#f59e0b,#ea580c);color:#fff;border:none;padding:8px 12px;border-radius:8px;font-size:11.5px;font-weight:800;display:flex;align-items:center;justify-content:center;gap:5px;cursor:default;">
+                <span id="previewContactBtnText">🚀 DM FOR LOSS RECOVERY</span>
+              </button>
+              
+              <!-- 2. Channel Join & Status Row -->
+              <div style="display:grid;grid-template-columns:1.2fr 0.8fr;gap:6px;">
+                <button id="previewJoinBtn" style="background:#0284c7;color:#fff;border:none;padding:8px 10px;border-radius:8px;font-size:11.5px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:4px;cursor:default;">
+                  <span>📢 1. Join Channel</span>
+                </button>
+                <button style="background:rgba(56,189,248,0.15);color:#38bdf8;border:1px solid rgba(56,189,248,0.3);padding:8px 10px;border-radius:8px;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:4px;cursor:default;">
+                  <span>✅ 2. Status</span>
+                </button>
+              </div>
+
+              <!-- 3. Dynamic Custom Buttons Preview -->
+              <div id="previewCustomButtonsWrap" style="display:flex;flex-direction:column;gap:6px;"></div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Active Force-Join Campaigns Table -->
+      <div class="card" style="margin-top:24px;background:rgba(15,23,42,0.85);border:1.5px solid rgba(148,163,184,0.18);border-radius:18px;padding:20px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px;">
+          <div>
+            <b style="font-size:15px;color:#fff;">📋 My Active Force-Join Link Gates</b>
+            <div style="font-size:12px;color:#94a3b8;margin-top:2px;">Copy these links and set them in your DM automation pitch to capture users</div>
+          </div>
+          <span style="font-size:12px;font-weight:700;color:#38bdf8;background:rgba(56,189,248,0.12);padding:4px 10px;border-radius:8px;" id="myCampaignsCountText">0 Campaigns</span>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:10px;" id="growthCampaignsListContainer">
+          <!-- Dynamic Campaign Cards -->
+        </div>
+      </div>
+
     </div>
-    <!-- Search Bar for Telegram Accounts -->
-    <div style="margin-bottom:10px;">
-      <input type="text" id="accSearchInput" placeholder="🔍 Search account by name or phone (+91...)" oninput="filterAccountsTab()" style="width:100%;padding:9px 12px;border-radius:10px;border:1px solid rgba(148,163,184,0.22);background:rgba(12,19,29,0.9);color:#fff;font-size:13px;outline:none;">
+
+    <!-- Subtab 2: Captured Subscribers Vault -->
+    <div id="growthPageTab_subscribers" style="display:none;">
+      
+      <!-- Compact Responsive KPI Metric Cards -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(120px, 1fr));gap:8px;margin-bottom:12px;">
+        <div style="background:linear-gradient(135deg,rgba(56,189,248,0.12),rgba(14,116,144,0.18));border:1.5px solid rgba(56,189,248,0.3);padding:8px 12px;border-radius:12px;display:flex;align-items:center;justify-content:space-between;gap:6px;min-width:0;">
+          <div style="min-width:0;">
+            <div style="font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Audience</div>
+            <div style="font-size:9.5px;color:#64748b;margin-top:1px;">Captured</div>
+          </div>
+          <div style="font-size:20px;font-weight:800;color:#38bdf8;flex-shrink:0;" id="growthAudienceTotal">0</div>
+        </div>
+
+        <div style="background:linear-gradient(135deg,rgba(34,197,94,0.12),rgba(16,185,129,0.18));border:1.5px solid rgba(34,197,94,0.3);padding:8px 12px;border-radius:12px;display:flex;align-items:center;justify-content:space-between;gap:6px;min-width:0;">
+          <div style="min-width:0;">
+            <div style="font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Channel Joined</div>
+            <div style="font-size:9.5px;color:#64748b;margin-top:1px;">Verified</div>
+          </div>
+          <div style="font-size:20px;font-weight:800;color:#4ade80;flex-shrink:0;" id="growthAudienceJoined">0</div>
+        </div>
+
+        <div style="background:linear-gradient(135deg,rgba(168,85,247,0.12),rgba(124,58,237,0.18));border:1.5px solid rgba(168,85,247,0.3);padding:8px 12px;border-radius:12px;display:flex;align-items:center;justify-content:space-between;gap:6px;min-width:0;">
+          <div style="min-width:0;">
+            <div style="font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Conversion</div>
+            <div style="font-size:9.5px;color:#64748b;margin-top:1px;">Join Rate</div>
+          </div>
+          <div style="font-size:20px;font-weight:800;color:#c084fc;flex-shrink:0;" id="growthAudienceRate">0%</div>
+        </div>
+      </div>
+
+      <!-- Subscribers Search & Controls -->
+      <div class="card" style="background:rgba(15,23,42,0.85);border:1.5px solid rgba(148,163,184,0.18);border-radius:14px;padding:14px;">
+        <div style="margin-bottom:12px;display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;">
+          <input type="text" id="growthSubscribersSearch" placeholder="🔍 Search subscribers by Telegram ID, @username, name..." oninput="filterGrowthSubscribersList()" style="flex:1;min-width:220px;padding:8px 12px;border-radius:8px;border:1px solid rgba(148,163,184,0.22);background:rgba(10,16,28,0.85);color:#fff;font-size:12.5px;outline:none;">
+          <button onclick="loadGrowthSubscribers()" style="background:rgba(56,189,248,0.14);color:#38bdf8;border:1px solid rgba(56,189,248,0.35);padding:8px 14px;border-radius:8px;font-size:11.5px;font-weight:700;cursor:pointer;">🔄 Refresh</button>
+        </div>
+
+        <!-- Subscribers List -->
+        <div id="growthSubscribersListContainer" style="max-height:480px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;">
+          <!-- Dynamic subscriber items -->
+        </div>
+      </div>
+
     </div>
-    <div id="tabs" class="tabs"></div>
-    <div id="fixedTabs" style="display:flex; gap:10px; margin-top:12px; flex-wrap:wrap;"></div>
-  </div>
 
-  <!-- Main Dynamic Area -->
-  <div id="detail"></div>
+    <!-- Subtab 3: Rich Broadcast Studio -->
+    <div id="growthPageTab_broadcast" style="display:none;">
+      
+      <div style="display:grid;grid-template-columns:1.2fr 0.8fr;gap:20px;align-items:start;" class="dash-grid">
+        
+        <!-- Broadcast Composer Form -->
+        <div class="card" style="background:rgba(15,23,42,0.85);border:1.5px solid rgba(148,163,184,0.18);border-radius:18px;padding:22px;box-shadow:0 10px 30px rgba(0,0,0,0.4);">
+          <b style="font-size:15px;color:#fff;display:block;margin-bottom:16px;border-bottom:1px solid rgba(148,163,184,0.12);padding-bottom:12px;">📢 Create Rich Media Broadcast Campaign</b>
 
-  <!-- Footer Credit -->
-  <div class="footer-note">LIVE MONITOR &amp; DM AUTOMATION SYSTEM</div>
-  <div class="credit">
-    <span>Design By</span>
-    <b>Ash_King</b>
-  </div>
+          <div style="margin-bottom:14px;">
+            <label style="font-size:12px;font-weight:700;color:#94a3b8;display:block;margin-bottom:6px;">Campaign Name:</label>
+            <input type="text" id="bcCampaignName" placeholder="e.g. Weekend Mega Offer" style="width:100%;padding:10px 14px;border-radius:10px;border:1px solid rgba(148,163,184,0.22);background:rgba(10,16,28,0.85);color:#fff;font-size:13px;outline:none;box-sizing:border-box;">
+          </div>
+
+          <div style="margin-bottom:14px;">
+            <label style="font-size:12px;font-weight:700;color:#94a3b8;display:block;margin-bottom:6px;">Media Type:</label>
+            <div style="display:flex;gap:14px;">
+              <label style="display:inline-flex;align-items:center;gap:6px;font-size:13px;color:#cbd5e1;cursor:pointer;">
+                <input type="radio" name="bcMediaType" value="text" checked onchange="toggleBcMediaInput()" style="accent-color:#38bdf8;width:16px;height:16px;">
+                <span>💬 Text Only</span>
+              </label>
+              <label style="display:inline-flex;align-items:center;gap:6px;font-size:13px;color:#cbd5e1;cursor:pointer;">
+                <input type="radio" name="bcMediaType" value="photo" onchange="toggleBcMediaInput()" style="accent-color:#38bdf8;width:16px;height:16px;">
+                <span>🖼️ Screenshot / Photo + Caption</span>
+              </label>
+            </div>
+          </div>
+
+          <div id="bcPhotoInputWrap" style="display:none;margin-bottom:14px;">
+            <label style="font-size:12px;font-weight:700;color:#94a3b8;display:block;margin-bottom:6px;">Broadcast Photo / Screenshot:</label>
+            <input type="file" id="bcPhotoFileInput" accept="image/*" style="display:none;" onchange="handleBcPhotoFileSelect(event)">
+            <input type="hidden" id="bcPhotoUrl" value="">
+
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+              <button type="button" onclick="document.getElementById('bcPhotoFileInput').click()" style="background:linear-gradient(135deg,rgba(168,85,247,0.15),rgba(124,58,237,0.25));border:1.5px dashed rgba(168,85,247,0.5);color:#c084fc;padding:8px 14px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all .2s;" onmouseover="this.style.borderColor='#c084fc'">
+                <span>📁 Choose Screenshot / Photo from Gallery</span>
+              </button>
+              <button type="button" id="bcPhotoClearBtn" onclick="clearBcPhotoImage()" style="display:none;background:rgba(239,68,68,0.15);color:#f87171;border:1px solid rgba(239,68,68,0.3);padding:8px 10px;border-radius:8px;font-size:11.5px;cursor:pointer;font-weight:700;">✕ Clear Photo</button>
+            </div>
+            <div id="bcPhotoFileNameHint" style="font-size:11px;color:#c084fc;margin-top:5px;display:none;"></div>
+          </div>
+
+          <!-- VIP Formatting & Emoji Toolbar for Broadcast -->
+          <div style="background:rgba(15,23,42,0.8);border:1px solid rgba(168,85,247,0.25);border-radius:10px;padding:6px 10px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;">
+            <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;">
+              <span style="font-size:11px;font-weight:700;color:#94a3b8;margin-right:2px;">✨ Quick VIP:</span>
+              <button type="button" onclick="insertBcEmoji('⭐️')" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#fff;padding:2px 6px;border-radius:6px;font-size:11px;cursor:pointer;">⭐️</button>
+              <button type="button" onclick="insertBcEmoji('👑')" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#fff;padding:2px 6px;border-radius:6px;font-size:11px;cursor:pointer;">👑</button>
+              <button type="button" onclick="insertBcEmoji('🔥')" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#fff;padding:2px 6px;border-radius:6px;font-size:11px;cursor:pointer;">🔥</button>
+              <button type="button" onclick="insertBcEmoji('💎')" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#fff;padding:2px 6px;border-radius:6px;font-size:11px;cursor:pointer;">💎</button>
+              <button type="button" onclick="insertBcEmoji('🚀')" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#fff;padding:2px 6px;border-radius:6px;font-size:11px;cursor:pointer;">🚀</button>
+              <button type="button" onclick="insertBcEmoji('💰')" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#fff;padding:2px 6px;border-radius:6px;font-size:11px;cursor:pointer;">💰</button>
+              <button type="button" onclick="insertBcEmoji('⚡')" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#fff;padding:2px 6px;border-radius:6px;font-size:11px;cursor:pointer;">⚡</button>
+              <button type="button" onclick="insertBcEmoji('🎁')" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#fff;padding:2px 6px;border-radius:6px;font-size:11px;cursor:pointer;">🎁</button>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;">
+              <button type="button" onclick="convertTextToVipFont('bcMessageText')" style="background:rgba(168,85,247,0.15);border:1px solid rgba(168,85,247,0.35);color:#c084fc;padding:3px 8px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;">
+                💎 VIP Bold Font
+              </button>
+              <button type="button" onclick="insertBcTgCustomEmojiTag()" style="background:rgba(56,189,248,0.15);border:1px solid rgba(56,189,248,0.35);color:#38bdf8;padding:3px 8px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;" title="Telegram Custom Animated Emoji Tag">
+                ⭐ &lt;tg-emoji&gt;
+              </button>
+            </div>
+          </div>
+
+          <div style="margin-bottom:14px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+              <label style="font-size:12px;font-weight:700;color:#94a3b8;">Message Text (Supports HTML &amp; Spintax Variations):</label>
+              <span style="font-size:11px;color:#38bdf8;background:rgba(56,189,248,0.12);padding:2px 8px;border-radius:6px;">Anti-Spam Spintax</span>
+            </div>
+            <textarea id="bcMessageText" rows="4" oninput="updateBcPreview()" placeholder="{Hello|Hey|Namaste} Guys! {Check out this jackpot offer|VIP prediction live}..." style="width:100%;padding:10px 14px;border-radius:10px;border:1px solid rgba(148,163,184,0.22);background:rgba(10,16,28,0.85);color:#fff;font-size:12.5px;outline:none;resize:vertical;box-sizing:border-box;font-family:inherit;min-height:90px;"></textarea>
+          </div>
+
+          <!-- Inline URL Buttons Builder -->
+          <div style="margin-bottom:16px;background:rgba(10,16,28,0.7);padding:14px;border-radius:12px;border:1px solid rgba(148,163,184,0.18);">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+              <span style="font-size:12px;font-weight:700;color:#94a3b8;">🔘 Inline Clickable Buttons:</span>
+              <button onclick="addBcButtonRow()" style="background:rgba(56,189,248,0.15);color:#38bdf8;border:1px solid rgba(56,189,248,0.3);padding:4px 10px;border-radius:8px;font-size:11.5px;font-weight:700;cursor:pointer;">+ Add Button</button>
+            </div>
+            <div id="bcButtonsContainer" style="display:flex;flex-direction:column;gap:8px;">
+              <!-- Dynamic Button Rows -->
+            </div>
+          </div>
+
+          <div style="margin-bottom:16px;">
+            <label style="font-size:12px;font-weight:700;color:#94a3b8;display:block;margin-bottom:6px;">Target Audience Filter:</label>
+            <select id="bcTargetFilter" style="width:100%;padding:10px 14px;border-radius:10px;border:1px solid rgba(148,163,184,0.22);background:rgba(10,16,28,0.85);color:#fff;font-size:13px;outline:none;box-sizing:border-box;">
+              <option value="all">👥 All Captured Subscribers (Everyone)</option>
+              <option value="joined_only">✅ Verified Channel Joiners Only</option>
+              <option value="pending_only">⏳ Unverified / Pending Joiners Only</option>
+            </select>
+          </div>
+
+          <button onclick="startBroadcastCampaign()" style="width:100%;background:linear-gradient(135deg,#8b5cf6,#6d28d9);color:#fff;border:none;padding:12px 18px;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 0 20px rgba(139,92,246,0.35);">
+            <span>🚀 Launch Broadcast Campaign</span>
+          </button>
+          <div id="bcFormMsg" style="display:none;margin-top:12px;font-size:12.5px;padding:10px 14px;border-radius:10px;"></div>
+        </div>
+
+        <!-- Right: Broadcast Preview & History -->
+        <div>
+          <div style="font-size:13px;font-weight:700;color:#94a3b8;margin-bottom:10px;">
+            <span>📱 Broadcast Live Phone Preview</span>
+          </div>
+
+          <!-- Preview box -->
+          <div style="background:#0f172a;border:2px solid rgba(139,92,246,0.35);border-radius:24px;padding:18px;box-shadow:0 14px 35px rgba(0,0,0,0.5);margin-bottom:20px;">
+            <div id="bcPreviewPhotoWrap" style="display:none;margin-bottom:10px;border-radius:10px;overflow:hidden;">
+              <img id="bcPreviewPhotoImg" src="" style="width:100%;max-height:160px;object-fit:cover;">
+            </div>
+            <div id="bcPreviewText" style="color:#f1f5f9;font-size:13px;line-height:1.5;white-space:pre-wrap;background:#1e293b;padding:12px;border-radius:12px;">
+              Message preview will appear here...
+            </div>
+            <div id="bcPreviewButtons" style="display:flex;flex-direction:column;gap:8px;margin-top:10px;">
+              <!-- Mock buttons -->
+            </div>
+          </div>
+
+          <!-- Past Broadcasts History -->
+          <div class="card" style="background:rgba(15,23,42,0.85);border:1.5px solid rgba(148,163,184,0.18);border-radius:18px;padding:18px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+              <b style="font-size:13.5px;color:#fff;">📜 Past Broadcasts History</b>
+              <button onclick="loadBroadcastHistory()" style="background:transparent;border:none;color:#38bdf8;font-size:11.5px;cursor:pointer;font-weight:700;">🔄 Refresh</button>
+            </div>
+            <div id="bcHistoryListContainer" style="max-height:240px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;">
+              <!-- History Items -->
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </div> <!-- /#growthStudioPage -->
 </div>
 
 <!-- ==================== TELEGRAM OTP & 2FA POPUP MODAL ==================== -->
@@ -896,7 +1388,297 @@ textarea{height:68px;resize:vertical;line-height:1.5}
   </div>
 </div>
 
+<!-- ==================== FORCE-JOIN & BROADCAST STUDIO MODAL ==================== -->
+<div id="growthStudioModal" class="confirm-overlay" onclick="if(event.target===this)closeGrowthStudioModal()" style="display:none;z-index:9999;">
+  <div class="confirm-box" style="max-width:980px;width:95%;text-align:left;padding:24px;max-height:92vh;display:flex;flex-direction:column;border-radius:20px;border:1.5px solid rgba(56,189,248,0.4);box-shadow:0 25px 60px rgba(0,0,0,0.7);background:linear-gradient(180deg,#0d1524 0%,#090d16 100%);">
+    
+    <!-- Modal Header -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;border-bottom:1px solid rgba(148,163,184,0.15);padding-bottom:14px;flex-wrap:wrap;gap:10px;">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div style="font-size:26px;width:46px;height:46px;border-radius:14px;background:rgba(56,189,248,0.15);border:1px solid rgba(56,189,248,0.3);display:flex;align-items:center;justify-content:center;">🚀</div>
+        <div>
+          <h2 style="margin:0;font-size:18px;color:#fff;font-weight:800;letter-spacing:0.3px;">Force-Join &amp; Broadcast Studio</h2>
+          <span style="font-size:12px;color:#94a3b8;" id="growthModalBotStatus">Central Telegram Gateway Engine</span>
+        </div>
+      </div>
+      <button onclick="closeGrowthStudioModal()" style="background:rgba(255,255,255,0.06);border:none;color:#cbd5e1;font-size:16px;width:32px;height:32px;border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>
+    </div>
+
+    <!-- Navigation Subtabs -->
+    <div style="display:flex;gap:8px;border-bottom:1px solid rgba(148,163,184,0.15);padding-bottom:12px;margin-bottom:16px;overflow-x:auto;">
+      <button id="growthSubTabBtn_links" class="tab tab-active" onclick="switchGrowthStudioTab('links')" style="font-size:13px;padding:8px 16px;border-radius:12px;">
+        <span>🔗 Force-Join Links &amp; Generator</span>
+      </button>
+      <button id="growthSubTabBtn_subscribers" class="tab" onclick="switchGrowthStudioTab('subscribers')" style="font-size:13px;padding:8px 16px;border-radius:12px;">
+        <span>👥 Captured Subscribers (<span id="growthSubscribersCountBadge">0</span>)</span>
+      </button>
+      <button id="growthSubTabBtn_broadcast" class="tab" onclick="switchGrowthStudioTab('broadcast')" style="font-size:13px;padding:8px 16px;border-radius:12px;">
+        <span>📢 Rich Broadcast Studio</span>
+      </button>
+    </div>
+
+    <!-- Modal Body Content Container -->
+    <div style="flex:1;overflow-y:auto;padding-right:4px;">
+      
+      <!-- ==================== SUBTAB 1: FORCE-JOIN LINK GENERATOR & PHONE MOCKUP ==================== -->
+      <div id="growthSubTab_links" style="display:block;">
+        <div style="display:grid;grid-template-columns:1.2fr 0.8fr;gap:20px;align-items:start;" class="growth-split-grid">
+          
+          <!-- Left: Campaign Generator Form -->
+          <div style="background:rgba(15,23,42,0.6);border:1px solid rgba(148,163,184,0.15);border-radius:16px;padding:18px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+              <b style="font-size:14px;color:#fff;" id="growthCampaignFormTitle">⚡ Create New Force-Join Link</b>
+              <button onclick="resetGrowthCampaignForm()" style="background:transparent;border:none;color:#38bdf8;font-size:11.5px;cursor:pointer;font-weight:700;">+ New Campaign</button>
+            </div>
+            <input type="hidden" id="growthCampaignId" value="">
+
+            <div style="margin-bottom:12px;">
+              <label style="font-size:11.5px;font-weight:700;color:#94a3b8;display:block;margin-bottom:4px;">Campaign Title (Internal Name):</label>
+              <input type="text" id="growthCampaignTitle" placeholder="e.g. VIP Trading Signals / Movies Hub" oninput="updateGrowthPhonePreview()" style="width:100%;padding:8px 12px;border-radius:8px;border:1px solid rgba(148,163,184,0.2);background:rgba(10,16,28,0.8);color:#fff;font-size:12.5px;outline:none;box-sizing:border-box;">
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+              <div>
+                <label style="font-size:11.5px;font-weight:700;color:#94a3b8;display:block;margin-bottom:4px;">Target Channel / Group (@):</label>
+                <input type="text" id="growthChannelUsername" placeholder="e.g. @MyVipChannel or link" oninput="updateGrowthPhonePreview()" style="width:100%;padding:8px 12px;border-radius:8px;border:1px solid rgba(148,163,184,0.2);background:rgba(10,16,28,0.8);color:#4ade80;font-weight:700;font-size:12.5px;outline:none;box-sizing:border-box;">
+              </div>
+              <div>
+                <label style="font-size:11.5px;font-weight:700;color:#94a3b8;display:block;margin-bottom:4px;">Custom Link Slug (Deep Link):</label>
+                <input type="text" id="growthCampaignSlug" placeholder="e.g. c_rohit_vip" style="width:100%;padding:8px 12px;border-radius:8px;border:1px solid rgba(148,163,184,0.2);background:rgba(10,16,28,0.8);color:#38bdf8;font-family:monospace;font-size:12px;outline:none;box-sizing:border-box;">
+              </div>
+            </div>
+
+            <div style="margin-bottom:12px;">
+              <label style="font-size:11.5px;font-weight:700;color:#94a3b8;display:block;margin-bottom:4px;">Banner Image / Screenshot URL (Optional):</label>
+              <input type="text" id="growthBannerUrl" placeholder="https://... (image url for lock screen)" oninput="updateGrowthPhonePreview()" style="width:100%;padding:8px 12px;border-radius:8px;border:1px solid rgba(148,163,184,0.2);background:rgba(10,16,28,0.8);color:#fff;font-size:12px;outline:none;box-sizing:border-box;">
+            </div>
+
+            <div style="margin-bottom:12px;">
+              <label style="font-size:11.5px;font-weight:700;color:#94a3b8;display:block;margin-bottom:4px;">Lock Screen Text (Supports HTML &amp; Spintax {A|B}):</label>
+              <textarea id="growthLockMessage" rows="3" oninput="updateGrowthPhonePreview()" style="width:100%;padding:8px 12px;border-radius:8px;border:1px solid rgba(148,163,184,0.2);background:rgba(10,16,28,0.8);color:#fff;font-size:12px;outline:none;resize:vertical;box-sizing:border-box;font-family:inherit;">🔒 &lt;b&gt;ACCESS LOCKED!&lt;/b&gt;&#10;&#10;Please join our official channel below to unlock full VIP access.&#10;&#10;After joining, tap &lt;b&gt;✅ Check Membership&lt;/b&gt;.</textarea>
+            </div>
+
+            <div style="margin-bottom:14px;">
+              <label style="font-size:11.5px;font-weight:700;color:#94a3b8;display:block;margin-bottom:4px;">Secret Unlocked Content (Revealed after they join):</label>
+              <textarea id="growthUnlockContent" rows="3" style="width:100%;padding:8px 12px;border-radius:8px;border:1px solid rgba(148,163,184,0.2);background:rgba(10,16,28,0.8);color:#4ade80;font-size:12px;outline:none;resize:vertical;box-sizing:border-box;font-family:inherit;">🎉 &lt;b&gt;CONGRATULATIONS! ACCESS GRANTED!&lt;/b&gt;&#10;&#10;Here is your private VIP link:&#10;👉 https://t.me/your_vip_link</textarea>
+            </div>
+
+            <div style="display:flex;gap:10px;">
+              <button onclick="saveGrowthCampaign()" style="flex:1;background:linear-gradient(135deg,#0284c7,#2563eb);color:#fff;border:none;padding:10px 16px;border-radius:10px;font-size:13px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;box-shadow:0 0 16px rgba(56,189,248,0.3);">
+                <span>⚡ Save &amp; Generate Deep Link</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Right: Live Interactive Phone Mockup -->
+          <div>
+            <div style="font-size:12px;font-weight:700;color:#94a3b8;margin-bottom:8px;display:flex;align-items:center;gap:6px;">
+              <span>📱 Live Telegram Preview (What Users See)</span>
+            </div>
+            
+            <div style="background:#0f172a;border:2px solid rgba(56,189,248,0.3);border-radius:24px;padding:16px;box-shadow:0 12px 30px rgba(0,0,0,0.5);display:flex;flex-direction:column;min-height:360px;">
+              
+              <!-- Mock Header -->
+              <div style="display:flex;align-items:center;gap:8px;border-bottom:1px solid rgba(148,163,184,0.15);padding-bottom:10px;margin-bottom:12px;">
+                <div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#0284c7,#2563eb);display:flex;align-items:center;justify-content:center;font-size:14px;">🤖</div>
+                <div>
+                  <div style="font-size:12.5px;font-weight:800;color:#fff;" id="previewBotName">Master Gateway Bot</div>
+                  <div style="font-size:10px;color:#38bdf8;">bot • official service</div>
+                </div>
+              </div>
+
+              <!-- Mock Telegram Message Bubble -->
+              <div style="background:#1e293b;border-radius:14px;padding:12px;color:#f1f5f9;font-size:12px;line-height:1.5;margin-bottom:10px;box-shadow:0 4px 12px rgba(0,0,0,0.2);">
+                <div id="previewBannerWrap" style="display:none;margin-bottom:8px;border-radius:8px;overflow:hidden;">
+                  <img id="previewBannerImg" src="" style="width:100%;max-height:140px;object-fit:cover;">
+                </div>
+                <div id="previewMessageText" style="white-space:pre-wrap;">🔒 <b>ACCESS LOCKED!</b><br><br>Please join our official channel below to unlock full VIP access.</div>
+              </div>
+
+              <!-- Mock Inline Keyboard Buttons -->
+              <div style="display:flex;flex-direction:column;gap:6px;margin-top:auto;">
+                <button id="previewJoinBtn" style="background:#0284c7;color:#fff;border:none;padding:8px 12px;border-radius:8px;font-size:11.5px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px;cursor:default;">
+                  <span>📢 1. Join Official Channel</span>
+                </button>
+                <button style="background:rgba(56,189,248,0.15);color:#38bdf8;border:1px solid rgba(56,189,248,0.3);padding:8px 12px;border-radius:8px;font-size:11.5px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px;cursor:default;">
+                  <span>✅ 2. Check Membership (Unlock)</span>
+                </button>
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+
+        <!-- My Created Force-Join Links Table -->
+        <div style="margin-top:22px;border-top:1px solid rgba(148,163,184,0.15);padding-top:16px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+            <b style="font-size:14px;color:#fff;">📋 My Active Force-Join Campaigns</b>
+            <span style="font-size:11.5px;color:#94a3b8;" id="myCampaignsCountText">0 Campaigns</span>
+          </div>
+          <div style="max-height:220px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;" id="growthCampaignsListContainer">
+            <!-- Dynamic Campaign Cards -->
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== SUBTAB 2: SUBSCRIBERS VAULT ==================== -->
+      <div id="growthSubTab_subscribers" style="display:none;">
+        
+        <!-- KPI Summary Cards -->
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px;">
+          <div style="background:rgba(56,189,248,0.1);border:1px solid rgba(56,189,248,0.25);padding:12px 14px;border-radius:14px;">
+            <div style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;">Total Audience Captured</div>
+            <div style="font-size:20px;font-weight:800;color:#38bdf8;margin-top:2px;" id="growthAudienceTotal">0</div>
+          </div>
+          <div style="background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.25);padding:12px 14px;border-radius:14px;">
+            <div style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;">Channel Joined Verified</div>
+            <div style="font-size:20px;font-weight:800;color:#4ade80;margin-top:2px;" id="growthAudienceJoined">0</div>
+          </div>
+          <div style="background:rgba(168,85,247,0.1);border:1px solid rgba(168,85,247,0.25);padding:12px 14px;border-radius:14px;">
+            <div style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;">Conversion Rate</div>
+            <div style="font-size:20px;font-weight:800;color:#c084fc;margin-top:2px;" id="growthAudienceRate">0%</div>
+          </div>
+        </div>
+
+        <!-- Search input -->
+        <div style="margin-bottom:12px;display:flex;gap:10px;">
+          <input type="text" id="growthSubscribersSearch" placeholder="🔍 Search subscribers by Telegram User ID, @username, name..." oninput="filterGrowthSubscribersList()" style="flex:1;padding:8px 12px;border-radius:10px;border:1px solid rgba(148,163,184,0.2);background:rgba(10,16,28,0.8);color:#fff;font-size:12.5px;outline:none;">
+          <button onclick="loadGrowthSubscribers()" style="background:rgba(56,189,248,0.12);color:#38bdf8;border:1px solid rgba(56,189,248,0.3);padding:8px 14px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;">🔄 Refresh</button>
+        </div>
+
+        <!-- Subscribers List -->
+        <div id="growthSubscribersListContainer" style="max-height:340px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;">
+          <!-- Dynamic subscriber items -->
+        </div>
+      </div>
+
+      <!-- ==================== SUBTAB 3: RICH BROADCAST STUDIO ==================== -->
+      <div id="growthSubTab_broadcast" style="display:none;">
+        <div style="display:grid;grid-template-columns:1.2fr 0.8fr;gap:20px;align-items:start;" class="growth-split-grid">
+          
+          <!-- Broadcast Composer -->
+          <div style="background:rgba(15,23,42,0.6);border:1px solid rgba(148,163,184,0.15);border-radius:16px;padding:18px;">
+            <b style="font-size:14px;color:#fff;display:block;margin-bottom:14px;">📢 Create Rich Media Broadcast</b>
+
+            <div style="margin-bottom:12px;">
+              <label style="font-size:11.5px;font-weight:700;color:#94a3b8;display:block;margin-bottom:4px;">Campaign Name:</label>
+              <input type="text" id="bcCampaignName" placeholder="e.g. Weekend Mega Offer" style="width:100%;padding:8px 12px;border-radius:8px;border:1px solid rgba(148,163,184,0.2);background:rgba(10,16,28,0.8);color:#fff;font-size:12.5px;outline:none;box-sizing:border-box;">
+            </div>
+
+            <div style="margin-bottom:12px;">
+              <label style="font-size:11.5px;font-weight:700;color:#94a3b8;display:block;margin-bottom:4px;">Media Type:</label>
+              <div style="display:flex;gap:10px;">
+                <label style="display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:#cbd5e1;cursor:pointer;">
+                  <input type="radio" name="bcMediaType" value="text" checked onchange="toggleBcMediaInput()" style="accent-color:#38bdf8;">
+                  <span>💬 Text Only</span>
+                </label>
+                <label style="display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:#cbd5e1;cursor:pointer;">
+                  <input type="radio" name="bcMediaType" value="photo" onchange="toggleBcMediaInput()" style="accent-color:#38bdf8;">
+                  <span>🖼️ Screenshot / Photo + Caption</span>
+                </label>
+              </div>
+            </div>
+
+            <div id="bcPhotoInputWrap" style="display:none;margin-bottom:12px;">
+              <label style="font-size:11.5px;font-weight:700;color:#94a3b8;display:block;margin-bottom:4px;">Photo / Banner URL:</label>
+              <input type="text" id="bcPhotoUrl" placeholder="https://... (direct image url or upload)" oninput="updateBcPreview()" style="width:100%;padding:8px 12px;border-radius:8px;border:1px solid rgba(148,163,184,0.2);background:rgba(10,16,28,0.8);color:#fff;font-size:12px;outline:none;box-sizing:border-box;">
+            </div>
+
+            <div style="margin-bottom:12px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+                <label style="font-size:11.5px;font-weight:700;color:#94a3b8;">Message Text (Supports HTML &amp; Spintax Variations):</label>
+                <span style="font-size:10.5px;color:#38bdf8;background:rgba(56,189,248,0.12);padding:1px 6px;border-radius:4px;">Anti-Spam Spintax</span>
+              </div>
+              <textarea id="bcMessageText" rows="4" oninput="updateBcPreview()" placeholder="{Hello|Hey|Namaste} Guys! {Check out this jackpot offer|VIP prediction live}..." style="width:100%;padding:8px 12px;border-radius:8px;border:1px solid rgba(148,163,184,0.2);background:rgba(10,16,28,0.8);color:#fff;font-size:12px;outline:none;resize:vertical;box-sizing:border-box;font-family:inherit;"></textarea>
+            </div>
+
+            <!-- Inline URL Buttons Builder -->
+            <div style="margin-bottom:14px;background:rgba(10,16,28,0.6);padding:10px;border-radius:10px;border:1px solid rgba(148,163,184,0.15);">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                <span style="font-size:11.5px;font-weight:700;color:#94a3b8;">🔘 Inline Clickable Buttons:</span>
+                <button onclick="addBcButtonRow()" style="background:rgba(56,189,248,0.15);color:#38bdf8;border:none;padding:3px 8px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;">+ Add Button</button>
+              </div>
+              <div id="bcButtonsContainer" style="display:flex;flex-direction:column;gap:6px;">
+                <!-- Dynamic Button Rows -->
+              </div>
+            </div>
+
+            <div style="margin-bottom:14px;">
+              <label style="font-size:11.5px;font-weight:700;color:#94a3b8;display:block;margin-bottom:4px;">Target Audience Filter:</label>
+              <select id="bcTargetFilter" style="width:100%;padding:8px 12px;border-radius:8px;border:1px solid rgba(148,163,184,0.2);background:rgba(10,16,28,0.8);color:#fff;font-size:12.5px;outline:none;box-sizing:border-box;">
+                <option value="all">👥 All Captured Subscribers (Everyone)</option>
+                <option value="joined_only">✅ Verified Channel Joiners Only</option>
+                <option value="pending_only">⏳ Unverified / Pending Joiners Only</option>
+              </select>
+            </div>
+
+            <button onclick="startBroadcastCampaign()" style="width:100%;background:linear-gradient(135deg,#8b5cf6,#6d28d9);color:#fff;border:none;padding:11px 16px;border-radius:10px;font-size:13.5px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;box-shadow:0 0 16px rgba(139,92,246,0.3);">
+              <span>🚀 Launch Broadcast Campaign</span>
+            </button>
+            <div id="bcFormMsg" style="display:none;margin-top:10px;font-size:12px;padding:8px 12px;border-radius:8px;"></div>
+          </div>
+
+          <!-- Right: Broadcast Preview & History -->
+          <div>
+            <div style="font-size:12px;font-weight:700;color:#94a3b8;margin-bottom:8px;">
+              <span>📱 Broadcast Live Preview</span>
+            </div>
+
+            <!-- Preview box -->
+            <div style="background:#0f172a;border:2px solid rgba(139,92,246,0.3);border-radius:20px;padding:14px;box-shadow:0 12px 30px rgba(0,0,0,0.5);margin-bottom:16px;">
+              <div id="bcPreviewPhotoWrap" style="display:none;margin-bottom:8px;border-radius:8px;overflow:hidden;">
+                <img id="bcPreviewPhotoImg" src="" style="width:100%;max-height:140px;object-fit:cover;">
+              </div>
+              <div id="bcPreviewText" style="color:#f1f5f9;font-size:12px;line-height:1.5;white-space:pre-wrap;background:#1e293b;padding:10px;border-radius:10px;">
+                Message preview will appear here...
+              </div>
+              <div id="bcPreviewButtons" style="display:flex;flex-direction:column;gap:6px;margin-top:8px;">
+                <!-- Mock buttons -->
+              </div>
+            </div>
+
+            <!-- Broadcast History -->
+            <div style="background:rgba(15,23,42,0.6);border:1px solid rgba(148,163,184,0.15);border-radius:16px;padding:14px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                <b style="font-size:13px;color:#fff;">📜 Past Broadcasts</b>
+                <button onclick="loadBroadcastHistory()" style="background:transparent;border:none;color:#38bdf8;font-size:11px;cursor:pointer;">🔄 Refresh</button>
+              </div>
+              <div id="bcHistoryListContainer" style="max-height:200px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;">
+                <!-- History Items -->
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Modal Footer -->
+    <div style="display:flex;justify-content:flex-end;margin-top:14px;border-top:1px solid rgba(148,163,184,0.15);padding-top:12px;">
+      <button onclick="closeGrowthStudioModal()" style="background:rgba(30,41,59,0.9);color:#cbd5e1;border:1px solid rgba(148,163,184,0.25);padding:7px 16px;border-radius:10px;font-size:12.5px;cursor:pointer;">Close</button>
+    </div>
+
+  </div>
+</div>
+
 <script>
+// Global HTML Escaper utility
+function escapeHtml(s) {
+  if (s === null || s === undefined) return '';
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+const esc = escapeHtml;
+window.escapeHtml = escapeHtml;
+window.esc = esc;
+
 // Token & View-As management
 const urlParams = new URLSearchParams(location.search);
 const qToken = urlParams.get('token');
@@ -1578,7 +2360,6 @@ function confirmClearSkippedUsers() {
 let currentTab = null;
 let currentUserRole = 'user';
 let accountsData = [];
-const esc = s => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 
 // Enhanced Real-time Log State & Filtering (No search box)
 let currentLogFilter = 'all';
@@ -1753,6 +2534,8 @@ function applyAccountsData(d) {
   if (tchEl) tchEl.textContent = `${d.accounts.length} Connected`;
   const fltEl = document.getElementById('fleetRunningBadge');
   if (fltEl) fltEl.textContent = `${runningCount} / ${d.accounts.length} Running`;
+
+  updateGrowthHubStatBadge();
 
   updateFleetButtonStates();
 
@@ -3315,7 +4098,11 @@ async function loadViewBanner() {
     } else {
       vb.style.display = 'none';
     }
-    if (j.role === 'admin') ab.style.display = 'block';
+    if (j.role === 'admin') {
+      ab.style.display = 'block';
+    } else {
+      ab.style.display = 'none';
+    }
   } catch(e) {}
 }
 
@@ -4256,6 +5043,1181 @@ document.addEventListener('focusin', function(e) {
     handleInputScroll(t);
   }
 });
+
+// ==================== FORCE-JOIN & BROADCAST STUDIO CONTROLLER ====================
+let myGrowthCampaigns = [];
+let myGrowthSubscribers = [];
+let growthMasterBotUsername = '';
+let currentGrowthTab = 'links';
+
+function openGrowthStudioPage(initialTab = 'links') {
+  const mainHeader = document.getElementById('mainAppHeader');
+  const mainView = document.getElementById('mainDashboardView');
+  const growthPage = document.getElementById('growthStudioPage');
+  
+  if (mainHeader) mainHeader.style.display = 'none';
+  if (mainView) mainView.style.display = 'none';
+  if (growthPage) {
+    growthPage.style.display = 'block';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  loadGrowthBotInfo();
+  switchGrowthPageTab(initialTab);
+  updateGrowthHubStatBadge();
+}
+
+function closeGrowthStudioPage() {
+  const growthPage = document.getElementById('growthStudioPage');
+  const mainHeader = document.getElementById('mainAppHeader');
+  const mainView = document.getElementById('mainDashboardView');
+  
+  if (growthPage) growthPage.style.display = 'none';
+  if (mainHeader) mainHeader.style.display = 'block';
+  if (mainView) {
+    mainView.style.display = 'block';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+}
+
+// Backward-compatible aliases
+function openGrowthStudioModal(initialTab = 'links') {
+  openGrowthStudioPage(initialTab);
+}
+function closeGrowthStudioModal() {
+  closeGrowthStudioPage();
+}
+function switchGrowthStudioTab(tab) {
+  switchGrowthPageTab(tab);
+}
+
+function switchGrowthPageTab(tab) {
+  currentGrowthTab = tab;
+  ['links', 'subscribers', 'broadcast'].forEach(t => {
+    const el = document.getElementById('growthPageTab_' + t);
+    const btn = document.getElementById('growthPageTabBtn_' + t);
+    if (el) el.style.display = (t === tab) ? 'block' : 'none';
+    if (btn) {
+      if (t === tab) btn.classList.add('tab-active');
+      else btn.classList.remove('tab-active');
+    }
+  });
+
+  if (tab === 'links') {
+    loadGrowthCampaigns();
+    updateGrowthPhonePreview();
+  } else if (tab === 'subscribers') {
+    loadGrowthSubscribers();
+  } else if (tab === 'broadcast') {
+    loadBroadcastHistory();
+    updateBcPreview();
+  }
+}
+
+async function refreshGrowthStudioData(showToastAlert = false) {
+  if (showToastAlert) showToast('Refreshing Growth Studio data...', 'info');
+  await loadGrowthBotInfo();
+  if (currentGrowthTab === 'links') {
+    await loadGrowthCampaigns();
+  } else if (currentGrowthTab === 'subscribers') {
+    await loadGrowthSubscribers();
+  } else if (currentGrowthTab === 'broadcast') {
+    await loadBroadcastHistory();
+  }
+  await updateGrowthHubStatBadge();
+  if (showToastAlert) showToast('Growth Studio up-to-date!', 'success');
+}
+
+async function updateGrowthHubStatBadge() {
+  try {
+    const res = await authFetch('/api/user/growth/subscribers');
+    const data = await res.json();
+    const statBadge = document.getElementById('growthStatCount');
+    const pageSubBadge = document.getElementById('growthPageSubscribersBadge');
+    if (data.ok) {
+      const count = data.total || 0;
+      if (statBadge) statBadge.textContent = count;
+      if (pageSubBadge) pageSubBadge.textContent = count;
+    }
+  } catch (e) {}
+}
+
+async function loadGrowthBotInfo() {
+  try {
+    const res = await authFetch('/api/user/growth/bot-info');
+    const data = await res.json();
+    const statusEl = document.getElementById('growthPageBotStatus');
+    const previewBotEl = document.getElementById('previewBotName');
+    if (data.ok && data.bot_configured) {
+      growthMasterBotUsername = data.bot_username || '';
+      if (statusEl) {
+        statusEl.innerHTML = `🟢 Active Bot: <b>@${data.bot_username}</b>`;
+        statusEl.style.color = '#4ade80';
+        statusEl.style.background = 'rgba(34,197,94,0.12)';
+        statusEl.style.borderColor = 'rgba(34,197,94,0.3)';
+      }
+      if (previewBotEl) previewBotEl.textContent = `@${data.bot_username}`;
+    } else {
+      if (statusEl) {
+        statusEl.innerHTML = `⚠️ Master Bot not configured by Admin`;
+        statusEl.style.color = '#fbbf24';
+        statusEl.style.background = 'rgba(245,158,11,0.12)';
+        statusEl.style.borderColor = 'rgba(245,158,11,0.3)';
+      }
+      if (previewBotEl) previewBotEl.textContent = `Master Gateway Bot`;
+    }
+  } catch (e) {}
+}
+
+async function loadGrowthCampaigns() {
+  try {
+    const res = await authFetch('/api/user/growth/campaigns');
+    const data = await res.json();
+    if (data.ok) {
+      myGrowthCampaigns = data.campaigns || [];
+      if (data.bot_username) growthMasterBotUsername = data.bot_username;
+      renderGrowthCampaignsList();
+    }
+  } catch (e) {
+    console.error('loadGrowthCampaigns error:', e);
+  }
+}
+
+function renderGrowthCampaignsList() {
+  const container = document.getElementById('growthCampaignsListContainer');
+  const countEl = document.getElementById('myCampaignsCountText');
+  if (countEl) countEl.textContent = `${myGrowthCampaigns.length} Campaigns`;
+  if (!container) return;
+
+  if (myGrowthCampaigns.length === 0) {
+    container.innerHTML = `
+      <div style="text-align:center;padding:18px;background:rgba(15,23,42,0.4);border-radius:12px;color:#94a3b8;font-size:12px;">
+        No force-join campaigns created yet. Create your first viral link above!
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = myGrowthCampaigns.map(c => {
+    const deepLink = growthMasterBotUsername && c.campaign_slug 
+      ? `https://t.me/${growthMasterBotUsername}?start=${c.campaign_slug}` 
+      : `https://t.me/?start=${c.campaign_slug}`;
+    const cleanCh = (c.channel_username || '').replace(/^@/, '');
+    const isSuspended = c.billing_status === 'suspended' || c.billing_status === 'unpaid';
+    const tgControlLink = growthMasterBotUsername ? `https://t.me/${growthMasterBotUsername}?start=login_${c.campaign_slug}` : '';
+
+    return `
+      <div style="background:rgba(15,23,42,0.7);border:1px solid ${isSuspended ? 'rgba(239,68,68,0.35)' : 'rgba(148,163,184,0.18)'};border-radius:12px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="font-size:20px;">${isSuspended ? '🔴' : '🔗'}</div>
+          <div>
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+              <b style="color:#fff;font-size:13px;">${escapeHtml(c.title || 'Untitled')}</b>
+              <span style="background:rgba(56,189,248,0.12);color:#38bdf8;padding:1px 6px;border-radius:4px;font-family:monospace;font-size:11px;">${escapeHtml(c.campaign_slug)}</span>
+              ${isSuspended 
+                ? '<span style="background:rgba(239,68,68,0.2);color:#f87171;padding:1px 7px;border-radius:6px;font-size:10.5px;font-weight:700;">🔴 Suspended (Unpaid)</span>' 
+                : '<span style="background:rgba(34,197,94,0.15);color:#4ade80;padding:1px 7px;border-radius:6px;font-size:10.5px;font-weight:700;">🟢 Active (Paid)</span>'
+              }
+            </div>
+            <div style="font-size:11.5px;color:#94a3b8;margin-top:3px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+              <span>Target: <b style="color:#4ade80;">@${escapeHtml(cleanCh || 'None')}</b></span>
+              <span>Owner: <b style="color:#cbd5e1;">${escapeHtml(c.owner || 'admin')}</b></span>
+              ${c.customer_tg_id ? `<span>Telegram Access: <b style="color:#38bdf8;">@${escapeHtml(c.customer_tg_id.replace(/^@/, ''))}</b></span>` : '<span style="color:#64748b;">Telegram Access: Not Linked</span>'}
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+          <button onclick="copyDeepLink('${deepLink}')" style="background:linear-gradient(135deg,#0284c7,#2563eb);color:#fff;border:none;padding:5px 10px;border-radius:6px;font-size:11.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:4px;">
+            <span>📋 Copy Link</span>
+          </button>
+          ${tgControlLink ? `
+            <a href="${tgControlLink}" target="_blank" style="background:rgba(56,189,248,0.15);color:#38bdf8;border:1px solid rgba(56,189,248,0.3);padding:5px 9px;border-radius:6px;font-size:11.5px;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:4px;">
+              <span>📱 Open in Bot</span>
+            </a>
+          ` : ''}
+          <button onclick="copyPromoTemplate('${escapeHtml(c.campaign_slug)}', '${escapeHtml(cleanCh)}')" style="background:rgba(168,85,247,0.15);color:#c084fc;border:1px solid rgba(168,85,247,0.3);padding:5px 10px;border-radius:6px;font-size:11.5px;font-weight:700;cursor:pointer;">
+            <span>💬 Pitch</span>
+          </button>
+          <!-- Admin Billing Kill Switch -->
+          <button onclick="toggleCampaignBillingAdmin('${escapeHtml(c.campaign_slug)}', '${isSuspended ? 'active' : 'unpaid'}')" style="background:${isSuspended ? 'rgba(34,197,94,0.18)' : 'rgba(239,68,68,0.18)'};color:${isSuspended ? '#4ade80' : '#f87171'};border:1px solid ${isSuspended ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)'};padding:5px 9px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;" title="${isSuspended ? 'Click to activate bot' : 'Click to shut off bot due to unpaid bill'}">
+            <span>${isSuspended ? '🟢 Activate Bot' : '🔴 Kill / Suspend'}</span>
+          </button>
+          <button onclick="editGrowthCampaign('${c.id}')" style="background:rgba(148,163,184,0.12);color:#cbd5e1;border:none;padding:5px 8px;border-radius:6px;font-size:11.5px;cursor:pointer;">
+            <span>✏️ Edit</span>
+          </button>
+          <button onclick="deleteGrowthCampaign('${c.id}')" style="background:rgba(239,68,68,0.15);color:#f87171;border:none;padding:5px 8px;border-radius:6px;font-size:11.5px;cursor:pointer;">
+            <span>🗑️</span>
+          </button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// ==================== VIP FORMATTING & CUSTOM INLINE BUTTONS CONTROLLER ====================
+let growthCustomButtons = [];
+
+function toVipBold(str) {
+  const chars = {
+    'A': '𝗔', 'B': '𝗕', 'C': '𝗖', 'D': '𝗗', 'E': '𝗘', 'F': '𝗙', 'G': '𝗚', 'H': '𝗛', 'I': '𝗜', 'J': '𝗝',
+    'K': '𝗞', 'L': '𝗟', 'M': '𝗠', 'N': '𝗡', 'O': '𝗢', 'P': '𝗣', 'Q': '𝗤', 'R': '𝗥', 'S': '𝗦', 'T': '𝗧',
+    'U': '𝗨', 'V': '𝗩', 'W': '𝗪', 'X': '𝗫', 'Y': '𝗬', 'Z': '𝗭',
+    'a': '𝗮', 'b': '𝗯', 'c': '𝗰', 'd': '𝗱', 'e': '𝗲', 'f': '𝗳', 'g': '𝗴', 'h': '𝗵', 'i': '𝗶', 'j': '𝗷',
+    'k': '𝗸', 'l': '𝗹', 'm': '𝗺', 'n': '𝗻', 'o': '𝗼', 'p': '𝗽', 'q': '𝗾', 'r': '𝗿', 's': '𝘀', 't': '𝘁',
+    'u': '𝘂', 'v': '𝘃', 'w': '𝘄', 'x': '𝘅', 'y': '𝘆', 'z': '𝘇',
+    '0': '𝟬', '1': '𝟭', '2': '𝟮', '3': '𝟯', '4': '𝟰', '5': '𝟱', '6': '𝟲', '7': '𝟳', '8': '𝟴', '9': '𝟵'
+  };
+  return str.split('').map(c => chars[c] || c).join('');
+}
+
+function convertTextToVipFont(textareaId = 'growthLockMessage') {
+  const el = document.getElementById(textareaId);
+  if (!el) return;
+  const start = el.selectionStart;
+  const end = el.selectionEnd;
+  const val = el.value;
+  if (start !== end) {
+    const selected = val.substring(start, end);
+    const converted = toVipBold(selected);
+    el.value = val.substring(0, start) + converted + val.substring(end);
+    el.selectionStart = start;
+    el.selectionEnd = start + converted.length;
+  } else {
+    // If no selection, convert uppercase/keywords or whole message
+    el.value = toVipBold(val);
+  }
+  updateGrowthPhonePreview();
+  showToast('Converted to VIP Premium Bold Font!', 'success');
+}
+
+function insertVipEmoji(emoji) {
+  const el = document.getElementById('growthLockMessage');
+  if (!el) return;
+  const start = el.selectionStart || 0;
+  const end = el.selectionEnd || 0;
+  const val = el.value;
+  el.value = val.substring(0, start) + ` ${emoji} ` + val.substring(end);
+  el.focus();
+  el.selectionStart = el.selectionEnd = start + emoji.length + 2;
+  updateGrowthPhonePreview();
+}
+
+function insertTgCustomEmojiTag() {
+  const el = document.getElementById('growthLockMessage');
+  if (!el) return;
+  const tag = `<tg-emoji emoji-id="5368324170671202286">⭐️</tg-emoji>`;
+  const start = el.selectionStart || 0;
+  const val = el.value;
+  el.value = val.substring(0, start) + tag + val.substring(start);
+  updateGrowthPhonePreview();
+  showToast('Custom animated <tg-emoji> tag inserted! (Telegram Premium style)', 'info');
+}
+
+function insertBcEmoji(emoji) {
+  const el = document.getElementById('bcMessageText');
+  if (!el) return;
+  const start = el.selectionStart || 0;
+  const end = el.selectionEnd || 0;
+  const val = el.value;
+  el.value = val.substring(0, start) + ` ${emoji} ` + val.substring(end);
+  el.focus();
+  el.selectionStart = el.selectionEnd = start + emoji.length + 2;
+  updateBcPreview();
+}
+
+function insertBcTgCustomEmojiTag() {
+  const el = document.getElementById('bcMessageText');
+  if (!el) return;
+  const tag = `<tg-emoji emoji-id="5368324170671202286">⭐️</tg-emoji>`;
+  const start = el.selectionStart || 0;
+  const val = el.value;
+  el.value = val.substring(0, start) + tag + val.substring(start);
+  updateBcPreview();
+  showToast('Custom animated <tg-emoji> tag inserted!', 'info');
+}
+
+function addGrowthCustomButton() {
+  growthCustomButtons.push({
+    text: `🔥 VIP Action #${growthCustomButtons.length + 1}`,
+    type: 'url', // 'url' | 'alert'
+    size: 'compact', // 'compact' | 'wide'
+    url: '',
+    prefill_text: '',
+    alert_text: '⭐️ Notice: Aapki request review me hai! Jaldi hi access milega.'
+  });
+  renderGrowthCustomButtonsForm();
+  updateGrowthPhonePreview();
+}
+
+function removeGrowthCustomButton(index) {
+  growthCustomButtons.splice(index, 1);
+  renderGrowthCustomButtonsForm();
+  updateGrowthPhonePreview();
+}
+
+function updateGrowthCustomButtonField(index, key, val) {
+  if (growthCustomButtons[index]) {
+    growthCustomButtons[index][key] = val;
+    updateGrowthPhonePreview();
+  }
+}
+
+function renderGrowthCustomButtonsForm() {
+  const container = document.getElementById('growthCustomButtonsContainer');
+  if (!container) return;
+
+  if (growthCustomButtons.length === 0) {
+    container.innerHTML = `
+      <div style="font-size:11px;color:#64748b;text-align:center;padding:8px;background:rgba(15,23,42,0.4);border-radius:8px;">
+        No extra custom buttons added yet. Tap "+ Add Button" above to add more links or popup alert buttons!
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = growthCustomButtons.map((btn, idx) => `
+    <div style="background:rgba(15,23,42,0.9);border:1px solid rgba(56,189,248,0.25);border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:6px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+        <span style="font-size:11px;font-weight:800;color:#38bdf8;">🔘 Button #${idx + 1}</span>
+        <button type="button" onclick="removeGrowthCustomButton(${idx})" style="background:rgba(239,68,68,0.15);color:#f87171;border:none;padding:2px 6px;border-radius:6px;font-size:11px;cursor:pointer;">🗑️ Remove</button>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1.2fr 0.9fr 0.9fr;gap:6px;">
+        <div>
+          <label style="font-size:10px;color:#94a3b8;display:block;margin-bottom:2px;">Title Text:</label>
+          <input type="text" value="${escapeHtml(btn.text)}" oninput="updateGrowthCustomButtonField(${idx}, 'text', this.value)" placeholder="e.g. 🎁 Claim Bonus" style="width:100%;padding:6px 8px;border-radius:6px;border:1px solid rgba(148,163,184,0.2);background:#0a101c;color:#fff;font-size:11.5px;outline:none;box-sizing:border-box;">
+        </div>
+
+        <div>
+          <label style="font-size:10px;color:#94a3b8;display:block;margin-bottom:2px;">Size / Width:</label>
+          <select onchange="updateGrowthCustomButtonField(${idx}, 'size', this.value)" style="width:100%;padding:6px 8px;border-radius:6px;border:1px solid rgba(148,163,184,0.2);background:#0a101c;color:#fff;font-size:11px;outline:none;box-sizing:border-box;">
+            <option value="compact" ${btn.size === 'compact' ? 'selected' : ''}>Compact (2 Per Row)</option>
+            <option value="wide" ${btn.size === 'wide' ? 'selected' : ''}>Full Width (Wide)</option>
+          </select>
+        </div>
+
+        <div>
+          <label style="font-size:10px;color:#94a3b8;display:block;margin-bottom:2px;">Click Action:</label>
+          <select onchange="updateGrowthCustomButtonField(${idx}, 'type', this.value); renderGrowthCustomButtonsForm();" style="width:100%;padding:6px 8px;border-radius:6px;border:1px solid rgba(148,163,184,0.2);background:#0a101c;color:#fbbf24;font-size:11px;font-weight:700;outline:none;box-sizing:border-box;">
+            <option value="url" ${btn.type !== 'alert' ? 'selected' : ''}>🔗 Redirect Link / Chat</option>
+            <option value="alert" ${btn.type === 'alert' ? 'selected' : ''}>💬 Popup Alert Message</option>
+          </select>
+        </div>
+      </div>
+
+      ${btn.type === 'alert' ? `
+        <div>
+          <label style="font-size:10px;color:#fbbf24;display:block;margin-bottom:2px;">Popup Alert Message (Shown when user taps button):</label>
+          <input type="text" value="${escapeHtml(btn.alert_text || '')}" oninput="updateGrowthCustomButtonField(${idx}, 'alert_text', this.value)" placeholder="e.g. ⭐️ Request mil gayi hai, 5 minute me video unlock hogi!" style="width:100%;padding:6px 8px;border-radius:6px;border:1px solid rgba(251,191,36,0.3);background:#0a101c;color:#fbbf24;font-size:11.5px;outline:none;box-sizing:border-box;">
+        </div>
+      ` : `
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+          <div>
+            <label style="font-size:10px;color:#94a3b8;display:block;margin-bottom:2px;">Target URL / @username:</label>
+            <input type="text" value="${escapeHtml(btn.url || '')}" oninput="updateGrowthCustomButtonField(${idx}, 'url', this.value)" placeholder="https://t.me/AshiqKing or web link" style="width:100%;padding:6px 8px;border-radius:6px;border:1px solid rgba(148,163,184,0.2);background:#0a101c;color:#fff;font-size:11.5px;outline:none;box-sizing:border-box;">
+          </div>
+          <div>
+            <label style="font-size:10px;color:#94a3b8;display:block;margin-bottom:2px;">Pre-Filled Message (for t.me links):</label>
+            <input type="text" value="${escapeHtml(btn.prefill_text || '')}" oninput="updateGrowthCustomButtonField(${idx}, 'prefill_text', this.value)" placeholder="e.g. Hello Sir I want VIP Hack" style="width:100%;padding:6px 8px;border-radius:6px;border:1px solid rgba(148,163,184,0.2);background:#0a101c;color:#cbd5e1;font-size:11.5px;outline:none;box-sizing:border-box;">
+          </div>
+        </div>
+      `}
+    </div>
+  `).join('');
+}
+
+function updateGrowthPhonePreview() {
+  const lockMsg = document.getElementById('growthLockMessage')?.value || '⭐️ <b>HELLO Mhd Ashraf</b> ⭐️\n⭐️ <b>AAPKI REQUEST JALDI HI APPROVE HO JAYEGI</b> ⭐️\n\n⭐️ <b>SETUP VIDEO & HACK APK NEECHE DIYA GAYA HAI</b> ⭐️';
+  const ch = document.getElementById('growthChannelUsername')?.value || '@OfficialChannel';
+  const bannerUrl = (document.getElementById('growthBannerUrl')?.value || '').trim();
+  const videoUrl = (document.getElementById('growthVideoUrl')?.value || '').trim();
+  const videoCap = (document.getElementById('growthVideoCaption')?.value || '').trim();
+  const audioUrl = (document.getElementById('growthAudioUrl')?.value || '').trim();
+  const contactUsername = (document.getElementById('growthContactUsername')?.value || '').trim();
+  const contactBtnText = (document.getElementById('growthContactButtonText')?.value || '').trim();
+
+  const prevText = document.getElementById('previewMessageText');
+  if (prevText) prevText.innerHTML = lockMsg.replace(/\n/g, '<br>');
+
+  const prevJoinBtn = document.getElementById('previewJoinBtn');
+  if (prevJoinBtn) {
+    const cleanCh = ch.startsWith('@') ? ch : (ch ? '@' + ch : '@OfficialChannel');
+    prevJoinBtn.innerHTML = `<span>📢 1. Join ${escapeHtml(cleanCh)}</span>`;
+  }
+
+  // Personal Contact Redirect Button
+  const prevContactBtn = document.getElementById('previewContactBtn');
+  const prevContactText = document.getElementById('previewContactBtnText');
+  if (prevContactBtn && prevContactText) {
+    if (contactUsername || contactBtnText) {
+      prevContactBtn.style.display = 'flex';
+      prevContactText.textContent = contactBtnText || '🚀 DM FOR LOSS RECOVERY';
+    } else {
+      prevContactBtn.style.display = 'flex';
+      prevContactText.textContent = '🚀 DM FOR LOSS RECOVERY';
+    }
+  }
+
+  // Banner Photo Preview
+  const bannerWrap = document.getElementById('previewBannerWrap');
+  const bannerImg = document.getElementById('previewBannerImg');
+  if (bannerWrap && bannerImg) {
+    if (bannerUrl && (bannerUrl.startsWith('http') || bannerUrl.startsWith('data:') || bannerUrl.startsWith('/uploads/') || bannerUrl.startsWith('uploads/'))) {
+      bannerImg.src = bannerUrl;
+      bannerWrap.style.display = 'block';
+    } else {
+      bannerWrap.style.display = 'none';
+    }
+  }
+
+  // Video Card Preview
+  const videoCard = document.getElementById('previewVideoCard');
+  const videoCapText = document.getElementById('previewVideoCaptionText');
+  if (videoCard) {
+    if (videoUrl) {
+      videoCard.style.display = 'block';
+      if (videoCapText) videoCapText.textContent = videoCap || '🎬 Setup Video Tutorial';
+    } else {
+      videoCard.style.display = 'none';
+    }
+  }
+
+  // Audio Card Preview
+  const audioCard = document.getElementById('previewAudioCard');
+  if (audioCard) {
+    if (audioUrl) {
+      audioCard.style.display = 'block';
+    } else {
+      audioCard.style.display = 'none';
+    }
+  }
+
+  // Render Custom Buttons in Phone Mockup
+  const customBtnsWrap = document.getElementById('previewCustomButtonsWrap');
+  if (customBtnsWrap) {
+    if (growthCustomButtons.length === 0) {
+      customBtnsWrap.innerHTML = '';
+    } else {
+      let html = '';
+      let i = 0;
+      while (i < growthCustomButtons.length) {
+        const b1 = growthCustomButtons[i];
+        if (b1.size === 'compact' && i + 1 < growthCustomButtons.length && growthCustomButtons[i + 1].size === 'compact') {
+          const b2 = growthCustomButtons[i + 1];
+          html += `
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+              <button style="background:rgba(56,189,248,0.18);border:1px solid rgba(56,189,248,0.35);color:#38bdf8;padding:7px 8px;border-radius:8px;font-size:11px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:default;">
+                ${escapeHtml(b1.text || 'Button')}
+              </button>
+              <button style="background:rgba(56,189,248,0.18);border:1px solid rgba(56,189,248,0.35);color:#38bdf8;padding:7px 8px;border-radius:8px;font-size:11px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:default;">
+                ${escapeHtml(b2.text || 'Button')}
+              </button>
+            </div>
+          `;
+          i += 2;
+        } else {
+          html += `
+            <button style="background:rgba(168,85,247,0.18);border:1px solid rgba(168,85,247,0.35);color:#c084fc;padding:8px 12px;border-radius:8px;font-size:11.5px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:4px;cursor:default;">
+              <span>${escapeHtml(b1.text || 'Button')}</span>
+            </button>
+          `;
+          i++;
+        }
+      }
+      customBtnsWrap.innerHTML = html;
+    }
+  }
+}
+
+async function handleGrowthBannerFileSelect(e) {
+  const file = e.target.files && e.target.files[0];
+  if (!file) return;
+
+  const hintEl = document.getElementById('growthBannerFileNameHint');
+  const clearBtn = document.getElementById('growthBannerClearBtn');
+  if (hintEl) {
+    hintEl.style.display = 'inline-block';
+    hintEl.textContent = `⏳ Uploading "${file.name}"...`;
+  }
+
+  const reader = new FileReader();
+  reader.onload = async function(evt) {
+    const base64Data = evt.target.result;
+    document.getElementById('growthBannerUrl').value = base64Data;
+    updateGrowthPhonePreview();
+
+    try {
+      const res = await authFetch('/api/user/growth/upload-media', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ file_data: base64Data, file_type: 'photo', filename: file.name })
+      });
+      const data = await res.json();
+      if (data.ok && data.url) {
+        document.getElementById('growthBannerUrl').value = data.url;
+        if (hintEl) hintEl.textContent = `✅ Photo: ${file.name}`;
+        if (clearBtn) clearBtn.style.display = 'inline-flex';
+        showToast('Photo uploaded from gallery!', 'success');
+      } else {
+        if (hintEl) hintEl.textContent = `✅ Photo Selected: ${file.name}`;
+        if (clearBtn) clearBtn.style.display = 'inline-flex';
+      }
+    } catch (err) {
+      if (hintEl) hintEl.textContent = `✅ Photo Ready: ${file.name}`;
+      if (clearBtn) clearBtn.style.display = 'inline-flex';
+    }
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearGrowthBannerImage() {
+  const fileInp = document.getElementById('growthBannerFileInput');
+  if (fileInp) fileInp.value = '';
+  document.getElementById('growthBannerUrl').value = '';
+  const hintEl = document.getElementById('growthBannerFileNameHint');
+  const clearBtn = document.getElementById('growthBannerClearBtn');
+  if (hintEl) hintEl.style.display = 'none';
+  if (clearBtn) clearBtn.style.display = 'none';
+  updateGrowthPhonePreview();
+}
+
+async function handleGrowthVideoFileSelect(e) {
+  const file = e.target.files && e.target.files[0];
+  if (!file) return;
+
+  const hintEl = document.getElementById('growthVideoFileNameHint');
+  const clearBtn = document.getElementById('growthVideoClearBtn');
+  if (hintEl) {
+    hintEl.style.display = 'inline-block';
+    hintEl.textContent = `⏳ Uploading video "${file.name}"...`;
+  }
+
+  const reader = new FileReader();
+  reader.onload = async function(evt) {
+    const base64Data = evt.target.result;
+    document.getElementById('growthVideoUrl').value = base64Data;
+    updateGrowthPhonePreview();
+
+    try {
+      const res = await authFetch('/api/user/growth/upload-media', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ file_data: base64Data, file_type: 'video', filename: file.name })
+      });
+      const data = await res.json();
+      if (data.ok && data.url) {
+        document.getElementById('growthVideoUrl').value = data.url;
+        if (hintEl) hintEl.textContent = `✅ Video: ${file.name}`;
+        if (clearBtn) clearBtn.style.display = 'inline-flex';
+        showToast('Video attached successfully!', 'success');
+      } else {
+        if (hintEl) hintEl.textContent = `✅ Video Selected: ${file.name}`;
+        if (clearBtn) clearBtn.style.display = 'inline-flex';
+      }
+    } catch (err) {
+      if (hintEl) hintEl.textContent = `✅ Video Ready: ${file.name}`;
+      if (clearBtn) clearBtn.style.display = 'inline-flex';
+    }
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearGrowthVideoFile() {
+  const fileInp = document.getElementById('growthVideoFileInput');
+  if (fileInp) fileInp.value = '';
+  document.getElementById('growthVideoUrl').value = '';
+  const hintEl = document.getElementById('growthVideoFileNameHint');
+  const clearBtn = document.getElementById('growthVideoClearBtn');
+  if (hintEl) hintEl.style.display = 'none';
+  if (clearBtn) clearBtn.style.display = 'none';
+  updateGrowthPhonePreview();
+}
+
+async function handleGrowthAudioFileSelect(e) {
+  const file = e.target.files && e.target.files[0];
+  if (!file) return;
+
+  const hintEl = document.getElementById('growthAudioFileNameHint');
+  const clearBtn = document.getElementById('growthAudioClearBtn');
+  if (hintEl) {
+    hintEl.style.display = 'inline-block';
+    hintEl.textContent = `⏳ Uploading audio "${file.name}"...`;
+  }
+
+  const reader = new FileReader();
+  reader.onload = async function(evt) {
+    const base64Data = evt.target.result;
+    document.getElementById('growthAudioUrl').value = base64Data;
+    updateGrowthPhonePreview();
+
+    try {
+      const res = await authFetch('/api/user/growth/upload-media', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ file_data: base64Data, file_type: 'audio', filename: file.name })
+      });
+      const data = await res.json();
+      if (data.ok && data.url) {
+        document.getElementById('growthAudioUrl').value = data.url;
+        if (hintEl) hintEl.textContent = `✅ Audio: ${file.name}`;
+        if (clearBtn) clearBtn.style.display = 'inline-flex';
+        showToast('Audio guide attached successfully!', 'success');
+      } else {
+        if (hintEl) hintEl.textContent = `✅ Audio Selected: ${file.name}`;
+        if (clearBtn) clearBtn.style.display = 'inline-flex';
+      }
+    } catch (err) {
+      if (hintEl) hintEl.textContent = `✅ Audio Ready: ${file.name}`;
+      if (clearBtn) clearBtn.style.display = 'inline-flex';
+    }
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearGrowthAudioFile() {
+  const fileInp = document.getElementById('growthAudioFileInput');
+  if (fileInp) fileInp.value = '';
+  document.getElementById('growthAudioUrl').value = '';
+  const hintEl = document.getElementById('growthAudioFileNameHint');
+  const clearBtn = document.getElementById('growthAudioClearBtn');
+  if (hintEl) hintEl.style.display = 'none';
+  if (clearBtn) clearBtn.style.display = 'none';
+  updateGrowthPhonePreview();
+}
+
+async function handleBcPhotoFileSelect(e) {
+  const file = e.target.files && e.target.files[0];
+  if (!file) return;
+
+  const hintEl = document.getElementById('bcPhotoFileNameHint');
+  const clearBtn = document.getElementById('bcPhotoClearBtn');
+  if (hintEl) {
+    hintEl.style.display = 'block';
+    hintEl.textContent = `⏳ Uploading "${file.name}" from gallery...`;
+  }
+
+  const reader = new FileReader();
+  reader.onload = async function(evt) {
+    const base64Data = evt.target.result;
+    document.getElementById('bcPhotoUrl').value = base64Data;
+    updateBcPreview();
+
+    try {
+      const res = await authFetch('/api/user/growth/upload-media', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ file_data: base64Data, file_type: 'photo', filename: file.name })
+      });
+      const data = await res.json();
+      if (data.ok && data.url) {
+        document.getElementById('bcPhotoUrl').value = data.url;
+        if (hintEl) hintEl.textContent = `✅ Screenshot Selected: ${file.name}`;
+        if (clearBtn) clearBtn.style.display = 'inline-flex';
+        showToast('Screenshot selected from gallery!', 'success');
+      } else {
+        if (hintEl) hintEl.textContent = `✅ Screenshot Ready: ${file.name}`;
+        if (clearBtn) clearBtn.style.display = 'inline-flex';
+      }
+    } catch (err) {
+      if (hintEl) hintEl.textContent = `✅ Screenshot Ready: ${file.name}`;
+      if (clearBtn) clearBtn.style.display = 'inline-flex';
+    }
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearBcPhotoImage() {
+  const fileInp = document.getElementById('bcPhotoFileInput');
+  if (fileInp) fileInp.value = '';
+  document.getElementById('bcPhotoUrl').value = '';
+  const hintEl = document.getElementById('bcPhotoFileNameHint');
+  const clearBtn = document.getElementById('bcPhotoClearBtn');
+  if (hintEl) hintEl.style.display = 'none';
+  if (clearBtn) clearBtn.style.display = 'none';
+  updateBcPreview();
+}
+
+async function saveGrowthCampaign() {
+  const id = document.getElementById('growthCampaignId')?.value || '';
+  const title = (document.getElementById('growthCampaignTitle')?.value || '').trim();
+  const slug = (document.getElementById('growthCampaignSlug')?.value || '').trim();
+  const channel = (document.getElementById('growthChannelUsername')?.value || '').trim();
+  const bannerUrl = (document.getElementById('growthBannerUrl')?.value || '').trim();
+  const videoUrl = (document.getElementById('growthVideoUrl')?.value || '').trim();
+  const videoCaption = (document.getElementById('growthVideoCaption')?.value || '').trim();
+  const audioUrl = (document.getElementById('growthAudioUrl')?.value || '').trim();
+  const customerTgId = (document.getElementById('growthCustomerTgId')?.value || '').trim();
+  const contactUsername = (document.getElementById('growthContactUsername')?.value || '').trim();
+  const contactBtnText = (document.getElementById('growthContactButtonText')?.value || '').trim();
+  const contactPrefill = (document.getElementById('growthContactPrefillText')?.value || '').trim();
+  const lockMsg = (document.getElementById('growthLockMessage')?.value || '').trim();
+  const unlockContent = (document.getElementById('growthUnlockContent')?.value || '').trim();
+
+  if (!channel) {
+    showToast('Please enter your Target Telegram Channel / Group (@username or link)!', 'error');
+    return;
+  }
+
+  showToast('Saving force-join & auto-DM campaign...', 'info');
+
+  try {
+    const res = await authFetch('/api/user/growth/campaigns/save', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id: id || undefined,
+        title: title || 'Official VIP Channel Link',
+        campaign_slug: slug || undefined,
+        channel_username: channel,
+        customer_tg_id: customerTgId || undefined,
+        banner_url: bannerUrl,
+        video_url: videoUrl,
+        video_caption: videoCaption,
+        audio_url: audioUrl,
+        contact_username: contactUsername,
+        contact_button_text: contactBtnText,
+        contact_prefill_text: contactPrefill,
+        extra_buttons_json: JSON.stringify(growthCustomButtons),
+        lock_message: lockMsg,
+        unlock_content: unlockContent
+      })
+    });
+
+    const data = await res.json();
+    if (data.ok) {
+      showToast('🎉 Campaign & Auto-DM setup saved successfully!', 'success');
+      resetGrowthCampaignForm();
+      await loadGrowthCampaigns();
+      if (data.deep_link) {
+        copyDeepLink(data.deep_link);
+      }
+    } else {
+      showToast(data.msg || 'Failed to save campaign', 'error');
+    }
+  } catch (err) {
+    showToast('Save error: ' + err.message, 'error');
+  }
+}
+
+function resetGrowthCampaignForm() {
+  document.getElementById('growthCampaignId').value = '';
+  document.getElementById('growthCampaignTitle').value = '';
+  document.getElementById('growthCampaignSlug').value = '';
+  document.getElementById('growthChannelUsername').value = '';
+  const custTgEl = document.getElementById('growthCustomerTgId');
+  if (custTgEl) custTgEl.value = '';
+  document.getElementById('growthVideoCaption').value = '';
+  clearGrowthBannerImage();
+  clearGrowthVideoFile();
+  clearGrowthAudioFile();
+  growthCustomButtons = [];
+  renderGrowthCustomButtonsForm();
+  const contactUserEl = document.getElementById('growthContactUsername');
+  if (contactUserEl) contactUserEl.value = '';
+  const formTitle = document.getElementById('growthPageFormTitle');
+  if (formTitle) formTitle.textContent = '⚡ Create Force-Join & Rich Auto-DM Gate';
+  updateGrowthPhonePreview();
+}
+
+function editGrowthCampaign(id) {
+  const c = myGrowthCampaigns.find(x => x.id === id);
+  if (!c) return;
+  document.getElementById('growthCampaignId').value = c.id;
+  document.getElementById('growthCampaignTitle').value = c.title || '';
+  document.getElementById('growthCampaignSlug').value = c.campaign_slug || '';
+  document.getElementById('growthChannelUsername').value = c.channel_username || '';
+  const custTgEl = document.getElementById('growthCustomerTgId');
+  if (custTgEl) custTgEl.value = c.customer_tg_id || '';
+  document.getElementById('growthBannerUrl').value = c.banner_url || '';
+  document.getElementById('growthVideoUrl').value = c.video_url || '';
+  document.getElementById('growthVideoCaption').value = c.video_caption || '';
+  document.getElementById('growthAudioUrl').value = c.audio_url || '';
+  document.getElementById('growthContactUsername').value = c.contact_username || '';
+  document.getElementById('growthContactButtonText').value = c.contact_button_text || '🚀 DM FOR LOSS RECOVERY';
+  document.getElementById('growthContactPrefillText').value = c.contact_prefill_text || 'Hello Sir, I want VIP Setup & Loss Recovery';
+  document.getElementById('growthLockMessage').value = c.lock_message || '';
+  document.getElementById('growthUnlockContent').value = c.unlock_content || '';
+
+  // Load custom extra buttons
+  growthCustomButtons = [];
+  if (c.extra_buttons_json) {
+    try {
+      const parsed = JSON.parse(c.extra_buttons_json);
+      if (Array.isArray(parsed)) {
+        growthCustomButtons = parsed;
+      }
+    } catch (e) {}
+  }
+  renderGrowthCustomButtonsForm();
+  
+  const formTitle = document.getElementById('growthPageFormTitle');
+  if (formTitle) formTitle.textContent = '✏️ Edit Force-Join & Auto-DM Gate';
+  
+  // Banner hint
+  const bannerHint = document.getElementById('growthBannerFileNameHint');
+  const bannerClear = document.getElementById('growthBannerClearBtn');
+  if (c.banner_url) {
+    if (bannerHint) { bannerHint.style.display = 'inline-block'; bannerHint.textContent = `✅ Photo Attached`; }
+    if (bannerClear) bannerClear.style.display = 'inline-flex';
+  } else {
+    if (bannerHint) bannerHint.style.display = 'none';
+    if (bannerClear) bannerClear.style.display = 'none';
+  }
+
+  // Video hint
+  const videoHint = document.getElementById('growthVideoFileNameHint');
+  const videoClear = document.getElementById('growthVideoClearBtn');
+  if (c.video_url) {
+    if (videoHint) { videoHint.style.display = 'inline-block'; videoHint.textContent = `✅ Video Attached`; }
+    if (videoClear) videoClear.style.display = 'inline-flex';
+  } else {
+    if (videoHint) videoHint.style.display = 'none';
+    if (videoClear) videoClear.style.display = 'none';
+  }
+
+  // Audio hint
+  const audioHint = document.getElementById('growthAudioFileNameHint');
+  const audioClear = document.getElementById('growthAudioClearBtn');
+  if (c.audio_url) {
+    if (audioHint) { audioHint.style.display = 'inline-block'; audioHint.textContent = `✅ Audio Attached`; }
+    if (audioClear) audioClear.style.display = 'inline-flex';
+  } else {
+    if (audioHint) audioHint.style.display = 'none';
+    if (audioClear) audioClear.style.display = 'none';
+  }
+
+  updateGrowthPhonePreview();
+  document.getElementById('growthCampaignTitle').scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+async function deleteGrowthCampaign(id) {
+  askConfirmAction({
+    title: 'Delete Force-Join Campaign?',
+    desc: 'Are you sure you want to delete this link gate? Existing subscribers will remain safe.',
+    yesText: 'Yes, Delete',
+    icon: '🗑️',
+    onConfirm: async () => {
+      try {
+        const res = await authFetch('/api/user/growth/campaigns/delete', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id })
+        });
+        const data = await res.json();
+        if (data.ok) {
+          showToast('Campaign deleted successfully!', 'success');
+          await loadGrowthCampaigns();
+        } else {
+          showToast(data.msg || 'Failed to delete', 'error');
+        }
+      } catch (e) {
+        showToast('Error: ' + e.message, 'error');
+      }
+    }
+  });
+}
+
+async function toggleCampaignBillingAdmin(slug, status) {
+  const isSuspending = status === 'unpaid';
+  const confirmMsg = isSuspending 
+    ? `⚠️ Kya aap sach me campaign "/${slug}" ko OFF / Suspend karna chahte hain? (User requests aur Auto-DM band ho jayenge)` 
+    : `🟢 Kya aap campaign "/${slug}" ko reactivate karna chahte hain?`;
+  if (!confirm(confirmMsg)) return;
+
+  try {
+    const res = await authFetch('/api/admin/growth/campaigns/toggle-billing', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ slug, status, notes: `Toggled via dashboard to ${status}` })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      showToast(data.msg || `Status updated to ${status}!`, 'success');
+      await loadGrowthCampaigns();
+    } else {
+      showToast(data.msg || 'Failed to update billing status', 'error');
+    }
+  } catch (err) {
+    showToast('Error: ' + err.message, 'error');
+  }
+}
+
+function copyDeepLink(link) {
+  if (!link) return;
+  navigator.clipboard.writeText(link).then(() => {
+    showToast('📋 Deep Link copied to clipboard!', 'success');
+  }).catch(() => {
+    prompt('Copy your link:', link);
+  });
+}
+
+function copyPromoTemplate(slug, channel) {
+  const link = growthMasterBotUsername 
+    ? `https://t.me/${growthMasterBotUsername}?start=${slug}` 
+    : `https://t.me/?start=${slug}`;
+  
+  const pitch = `🔥 Aaj ka VIP Special Signal / Prediction Release Ho Gaya Hai!\n\nNiche diye gaye link par tap karke instant unlock karein 👇\n👉 ${link}\n\n(⚡ Note: Sirf agle 15 minute ke liye free access hai)`;
+  
+  navigator.clipboard.writeText(pitch).then(() => {
+    showToast('💬 High-converting DM Pitch copied to clipboard!', 'success');
+  }).catch(() => {
+    prompt('Copy your DM Pitch:', pitch);
+  });
+}
+
+// ---------------- SUBSCRIBERS TAB ----------------
+async function loadGrowthSubscribers() {
+  try {
+    const res = await authFetch('/api/user/growth/subscribers');
+    const data = await res.json();
+    if (data.ok) {
+      myGrowthSubscribers = data.subscribers || [];
+      document.getElementById('growthAudienceTotal').textContent = data.total || 0;
+      document.getElementById('growthAudienceJoined').textContent = data.joined || 0;
+      document.getElementById('growthSubscribersCountBadge').textContent = data.total || 0;
+
+      const rate = data.total > 0 ? Math.round((data.joined / data.total) * 100) : 0;
+      document.getElementById('growthAudienceRate').textContent = `${rate}%`;
+
+      renderGrowthSubscribersList(myGrowthSubscribers);
+    }
+  } catch (e) {
+    console.error('loadGrowthSubscribers error:', e);
+  }
+}
+
+function renderGrowthSubscribersList(list) {
+  const container = document.getElementById('growthSubscribersListContainer');
+  if (!container) return;
+
+  if (!list || list.length === 0) {
+    container.innerHTML = `
+      <div style="text-align:center;padding:24px;background:rgba(15,23,42,0.4);border-radius:12px;color:#94a3b8;font-size:12px;">
+        No captured subscribers yet. Start sending your Force-Join link in DMs to capture users!
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = list.map(s => {
+    const dateStr = s.created_at ? new Date(s.created_at).toLocaleString('en-IN') : '—';
+    const isJoined = s.is_joined === 1;
+
+    return `
+      <div style="background:rgba(15,23,42,0.6);border:1px solid rgba(148,163,184,0.15);border-radius:10px;padding:9px 12px;display:flex;align-items:center;justify-content:space-between;gap:8px;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="width:32px;height:32px;border-radius:50%;background:rgba(56,189,248,0.12);display:flex;align-items:center;justify-content:center;font-size:14px;">👤</div>
+          <div>
+            <div style="display:flex;align-items:center;gap:6px;">
+              <b style="color:#fff;font-size:12.5px;">${escapeHtml(s.first_name || 'User')} ${escapeHtml(s.last_name || '')}</b>
+              ${s.username ? `<span style="color:#38bdf8;font-size:11.5px;">@${escapeHtml(s.username)}</span>` : ''}
+            </div>
+            <div style="font-size:11px;color:#94a3b8;margin-top:1px;">
+              ID: <code>${s.telegram_id}</code> • ${dateStr}
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <span style="background:${isJoined ? 'rgba(34,197,94,0.15)' : 'rgba(245,158,11,0.15)'};color:${isJoined ? '#4ade80' : '#fbbf24'};border:1px solid ${isJoined ? 'rgba(34,197,94,0.3)' : 'rgba(245,158,11,0.3)'};padding:3px 8px;border-radius:12px;font-size:11px;font-weight:700;">
+            ${isJoined ? '✅ Joined' : '⏳ Started'}
+          </span>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function filterGrowthSubscribersList() {
+  const q = (document.getElementById('growthSubscribersSearch')?.value || '').toLowerCase().trim();
+  if (!q) {
+    renderGrowthSubscribersList(myGrowthSubscribers);
+    return;
+  }
+  const filtered = myGrowthSubscribers.filter(s =>
+    String(s.telegram_id).includes(q) ||
+    (s.username && s.username.toLowerCase().includes(q)) ||
+    (s.first_name && s.first_name.toLowerCase().includes(q))
+  );
+  renderGrowthSubscribersList(filtered);
+}
+
+// ---------------- BROADCAST TAB ----------------
+let bcButtonsList = [];
+
+function toggleBcMediaInput() {
+  const isPhoto = document.querySelector('input[name="bcMediaType"]:checked')?.value === 'photo';
+  const wrap = document.getElementById('bcPhotoInputWrap');
+  if (wrap) wrap.style.display = isPhoto ? 'block' : 'none';
+  updateBcPreview();
+}
+
+function addBcButtonRow(text = '', url = '') {
+  const container = document.getElementById('bcButtonsContainer');
+  if (!container) return;
+  const row = document.createElement('div');
+  row.className = 'bc-btn-row';
+  row.style = 'display:flex;gap:6px;align-items:center;';
+  row.innerHTML = `
+    <input type="text" placeholder="Button Text (e.g. 🔥 Open VIP)" value="${escapeHtml(text)}" oninput="updateBcPreview()" style="flex:1;padding:6px 10px;border-radius:6px;border:1px solid rgba(148,163,184,0.2);background:rgba(15,23,42,0.8);color:#fff;font-size:11.5px;outline:none;">
+    <input type="text" placeholder="URL (https://t.me/...)" value="${escapeHtml(url)}" oninput="updateBcPreview()" style="flex:1.5;padding:6px 10px;border-radius:6px;border:1px solid rgba(148,163,184,0.2);background:rgba(15,23,42,0.8);color:#38bdf8;font-size:11.5px;outline:none;">
+    <button onclick="removeBcButtonRow(this)" style="background:rgba(239,68,68,0.15);color:#f87171;border:none;width:26px;height:26px;border-radius:6px;cursor:pointer;">✕</button>
+  `;
+  container.appendChild(row);
+  updateBcPreview();
+}
+
+function removeBcButtonRow(btn) {
+  const row = btn.closest('.bc-btn-row');
+  if (row) row.remove();
+  updateBcPreview();
+}
+
+function getBcButtonsData() {
+  const rows = document.querySelectorAll('.bc-btn-row');
+  const buttons = [];
+  rows.forEach(r => {
+    const inputs = r.querySelectorAll('input');
+    const text = inputs[0]?.value?.trim() || '';
+    const url = inputs[1]?.value?.trim() || '';
+    if (text && url) {
+      buttons.push({ text, url });
+    }
+  });
+  return buttons;
+}
+
+function updateBcPreview() {
+  const isPhoto = document.querySelector('input[name="bcMediaType"]:checked')?.value === 'photo';
+  const photoUrl = (document.getElementById('bcPhotoUrl')?.value || '').trim();
+  const text = document.getElementById('bcMessageText')?.value || 'Message preview will appear here...';
+
+  const photoWrap = document.getElementById('bcPreviewPhotoWrap');
+  const photoImg = document.getElementById('bcPreviewPhotoImg');
+  if (photoWrap && photoImg) {
+    if (isPhoto && photoUrl && (photoUrl.startsWith('http') || photoUrl.startsWith('data:') || photoUrl.startsWith('/uploads/') || photoUrl.startsWith('uploads/'))) {
+      photoImg.src = photoUrl;
+      photoWrap.style.display = 'block';
+    } else {
+      photoWrap.style.display = 'none';
+    }
+  }
+
+  const textEl = document.getElementById('bcPreviewText');
+  if (textEl) {
+    textEl.innerHTML = text.replace(/\n/g, '<br>');
+  }
+
+  const btnContainer = document.getElementById('bcPreviewButtons');
+  const buttons = getBcButtonsData();
+  if (btnContainer) {
+    if (buttons.length === 0) {
+      btnContainer.innerHTML = '';
+    } else {
+      btnContainer.innerHTML = buttons.map(b => `
+        <button style="background:#0284c7;color:#fff;border:none;padding:7px 10px;border-radius:6px;font-size:11.5px;font-weight:700;cursor:default;">
+          ${escapeHtml(b.text)} ↗
+        </button>
+      `).join('');
+    }
+  }
+}
+
+async function startBroadcastCampaign() {
+  const name = (document.getElementById('bcCampaignName')?.value || '').trim();
+  const isPhoto = document.querySelector('input[name="bcMediaType"]:checked')?.value === 'photo';
+  const photoUrl = (document.getElementById('bcPhotoUrl')?.value || '').trim();
+  const text = (document.getElementById('bcMessageText')?.value || '').trim();
+  const filter = document.getElementById('bcTargetFilter')?.value || 'all';
+  const buttons = getBcButtonsData();
+
+  const msgEl = document.getElementById('bcFormMsg');
+
+  if (!text) {
+    if (msgEl) {
+      msgEl.style.display = 'block';
+      msgEl.style.background = 'rgba(239,68,68,0.2)';
+      msgEl.style.color = '#f87171';
+      msgEl.textContent = 'Please enter message text for the broadcast!';
+    }
+    return;
+  }
+
+  showToast('Launching broadcast campaign...', 'info');
+
+  try {
+    const res = await authFetch('/api/user/growth/broadcast/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        campaign_name: name || 'Quick Broadcast',
+        message_text: text,
+        media_type: isPhoto ? 'photo' : 'text',
+        media_url: isPhoto ? photoUrl : '',
+        buttons_json: buttons.length > 0 ? JSON.stringify(buttons) : '',
+        target_filter: filter
+      })
+    });
+
+    const data = await res.json();
+    if (data.ok) {
+      showToast('🚀 Broadcast launched in background queue!', 'success');
+      if (msgEl) {
+        msgEl.style.display = 'block';
+        msgEl.style.background = 'rgba(34,197,94,0.2)';
+        msgEl.style.color = '#4ade80';
+        msgEl.textContent = `🚀 Broadcast started! Sending to ${data.job?.total_targets || 'targets'} subscribers...`;
+      }
+      document.getElementById('bcMessageText').value = '';
+      await loadBroadcastHistory();
+    } else {
+      showToast(data.msg || 'Failed to start broadcast', 'error');
+      if (msgEl) {
+        msgEl.style.display = 'block';
+        msgEl.style.background = 'rgba(239,68,68,0.2)';
+        msgEl.style.color = '#f87171';
+        msgEl.textContent = data.msg || 'Failed to launch broadcast';
+      }
+    }
+  } catch (err) {
+    showToast('Error: ' + err.message, 'error');
+  }
+}
+
+async function loadBroadcastHistory() {
+  try {
+    const res = await authFetch('/api/user/growth/broadcast/history');
+    const data = await res.json();
+    const container = document.getElementById('bcHistoryListContainer');
+    if (!container) return;
+
+    if (!data.ok || !data.history || data.history.length === 0) {
+      container.innerHTML = `<div style="text-align:center;padding:12px;color:#94a3b8;font-size:11.5px;">No broadcasts sent yet.</div>`;
+      return;
+    }
+
+    container.innerHTML = data.history.map(b => {
+      const dateStr = b.created_at ? new Date(b.created_at).toLocaleString('en-IN') : '—';
+      const isComplete = b.status === 'completed';
+
+      return `
+        <div style="background:rgba(10,16,28,0.7);border:1px solid rgba(148,163,184,0.15);border-radius:8px;padding:8px 10px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+            <b style="color:#fff;font-size:12px;">${escapeHtml(b.campaign_name || 'Broadcast')}</b>
+            <span style="background:${isComplete ? 'rgba(34,197,94,0.15)' : 'rgba(56,189,248,0.15)'};color:${isComplete ? '#4ade80' : '#38bdf8'};padding:2px 6px;border-radius:8px;font-size:10px;font-weight:700;">
+              ${escapeHtml(b.status)}
+            </span>
+          </div>
+          <div style="font-size:11px;color:#94a3b8;display:flex;justify-content:space-between;">
+            <span>Sent: <b style="color:#4ade80;">${b.sent_count}</b> / ${b.total_targets}</span>
+            <span>${dateStr}</span>
+          </div>
+        </div>
+      `;
+    }).join('');
+  } catch (e) {}
+}
 
 document.addEventListener('DOMContentLoaded', () => {
   setTimeout(checkUserTelegramLink, 600);

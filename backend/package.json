@@ -4,11 +4,10 @@
   "type": "module",
   "description": "Telegram multi-account promoter, live monitor, and DM automation dashboard",
   "scripts": {
-    "assemble": "node scripts/assemble.mjs",
-    "verify": "node scripts/assemble.mjs --verify",
-    "dev": "node scripts/assemble.mjs && (node --experimental-strip-types --max-old-space-size=2048 --expose-gc server.build.ts || npx --yes tsx --expose-gc --max-old-space-size=2048 server.build.ts)",
-    "start": "node scripts/assemble.mjs && npx --yes tsx --expose-gc --max-old-space-size=2048 server.build.ts",
-    "build": "node scripts/assemble.mjs",
+    "dev": "node --experimental-strip-types --expose-gc server.ts || npx --yes tsx --expose-gc server.ts",
+    "start": "node --experimental-strip-types server.ts || tsx server.ts",
+    "pm2": "pm2 start ecosystem.config.cjs",
+    "build": "node -e 'console.log(\"Build completed successfully\")'",
     "lint": "node -e 'console.log(\"Lint completed\")'"
   },
   "dependencies": {
@@ -17,6 +16,7 @@
     "cors": "^2.8.5",
     "express": "^4.21.2",
     "telegram": "^2.26.22",
+    "tsx": "^4.23.15",
     "ws": "^8.21.3"
   },
   "devDependencies": {

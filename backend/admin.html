@@ -2184,6 +2184,12 @@ option {
         <span class="badge-count" id="navAccessReqBadge" style="display:none;background:#f59e0b;color:#0b1120;font-weight:800;">0 New</span>
       </a>
 
+      <a class="nav-item" id="nav_growth" onclick="switchAdminTab('growth')" style="background:linear-gradient(90deg, rgba(56,189,248,0.12) 0%, rgba(15,23,42,0.4) 100%);border-left:3px solid #38bdf8;">
+        <span class="icon">🚀</span>
+        <span>Growth &amp; Broadcast</span>
+        <span class="badge-count" id="navGrowthBadge" style="background:#0284c7;color:#fff;font-weight:800;">PRO</span>
+      </a>
+
       <a class="nav-item" id="nav_generator" onclick="switchAdminTab('generator')">
         <span class="icon">🤖</span>
         <span>Bot Generator &amp; Vault</span>
@@ -3159,6 +3165,244 @@ option {
             </button>
           </div>
           <div class="msg" id="aiConfigMsg" onclick="this.style.display='none'" style="cursor:pointer;" title="Click to dismiss"></div>
+        </div>
+      </section>
+
+      <!-- ==================== TAB: MASTER GROWTH & BROADCAST ENGINE ==================== -->
+      <section id="view_growth" style="display:none;">
+        <div class="dashboard-card" style="border-color:rgba(56,189,248,0.35);background:linear-gradient(180deg, rgba(15,23,42,0.95) 0%, rgba(24,36,53,0.95) 100%);">
+          <div class="card-title-bar">
+            <div>
+              <h2>🚀 Master Growth &amp; Broadcast Engine</h2>
+              <p style="margin:4px 0 0 0;font-size:12.5px;color:var(--text-muted);">
+                Central Gateway Bot for viral Telegram force-join links, multi-tenant subscriber capturing &amp; high-speed rich media broadcasts.
+              </p>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span id="growthBotStatusBadge" class="card-tag" style="background:rgba(239,68,68,0.15);color:#f87171;border-color:rgba(239,68,68,0.3);">🔴 Not Configured</span>
+              <button class="btn-action btn-blue" onclick="loadAdminGrowthTab(true)" style="width:auto;margin:0;padding:6px 14px;font-size:11.5px;">🔄 Refresh Stats</button>
+            </div>
+          </div>
+
+          <!-- KPI Metric Cards -->
+          <div class="metrics-grid" style="margin-bottom:20px;">
+            <div class="metric-card" style="background:linear-gradient(135deg,rgba(56,189,248,0.12),rgba(14,116,144,0.18));border-color:rgba(56,189,248,0.3);">
+              <div class="metric-header">
+                <span class="metric-title">Active User Campaigns</span>
+                <span class="metric-icon">🔗</span>
+              </div>
+              <div class="metric-value" id="growthMetricCampaigns">0</div>
+              <div class="metric-subtitle">Live deep-link gates across all clients</div>
+            </div>
+            <div class="metric-card" style="background:linear-gradient(135deg,rgba(168,85,247,0.12),rgba(124,58,237,0.18));border-color:rgba(168,85,247,0.3);">
+              <div class="metric-header">
+                <span class="metric-title">Total Captured Subscribers</span>
+                <span class="metric-icon">👥</span>
+              </div>
+              <div class="metric-value" id="growthMetricSubscribers" style="color:#c084fc;">0</div>
+              <div class="metric-subtitle">Safely locked in SQLite database</div>
+            </div>
+            <div class="metric-card" style="background:linear-gradient(135deg,rgba(34,197,94,0.12),rgba(16,185,129,0.18));border-color:rgba(34,197,94,0.3);">
+              <div class="metric-header">
+                <span class="metric-title">Verified Channel Joiners</span>
+                <span class="metric-icon">✅</span>
+              </div>
+              <div class="metric-value" id="growthMetricJoined" style="color:#4ade80;">0</div>
+              <div class="metric-subtitle" id="growthMetricRate">0% Join Conversion Rate</div>
+            </div>
+          </div>
+
+          <!-- Master Growth Bot Credentials Card -->
+          <div class="detail-section" style="border-color:rgba(56,189,248,0.35);background:rgba(14,116,144,0.06);margin-bottom:20px;">
+            <div class="detail-section-title" style="color:#38bdf8;">🤖 Dedicated Master Growth Bot Token (BotFather)</div>
+            <div style="font-size:12.5px;color:var(--text-muted);margin-bottom:14px;line-height:1.5;">
+              Create a dedicated bot in <b>@BotFather</b> (e.g. <code>@VerifyHubBot</code> or <code>@AccessGatewayBot</code>). All customer referral links and broadcast messages will route through this single master bot.
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
+              <div class="form-group" style="margin:0;">
+                <label>Telegram Bot Token (from @BotFather):</label>
+                <input type="text" id="adminGrowthBotToken" class="form-control" placeholder="e.g. 7123456789:AAHq_w7..." style="font-family:'JetBrains Mono',monospace;">
+              </div>
+              <div class="form-group" style="margin:0;">
+                <label>Bot Username (without @):</label>
+                <input type="text" id="adminGrowthBotUsername" class="form-control" placeholder="e.g. VerifyGatewayBot" style="font-family:'JetBrains Mono',monospace;">
+              </div>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
+              <div class="form-group" style="margin:0;">
+                <label>Global Broadcast Throttle (ms delay per message):</label>
+                <input type="number" id="adminGrowthBroadcastDelay" class="form-control" value="40" min="25" max="500" placeholder="40ms (~25 msg/sec)">
+                <span style="font-size:11px;color:#94a3b8;margin-top:3px;display:block;">Safe default: 40ms (~25 msgs/sec, safe under Telegram's 30/sec limit)</span>
+              </div>
+              <div class="form-group" style="margin:0;display:flex;flex-direction:column;justify-content:center;">
+                <label>Engine Master Switch:</label>
+                <label style="display:inline-flex;align-items:center;gap:8px;cursor:pointer;margin-top:6px;font-size:13px;color:#fff;">
+                  <input type="checkbox" id="adminGrowthBotEnabled" checked style="width:18px;height:18px;accent-color:#38bdf8;">
+                  <span>Enable Growth Bot Auto-Response &amp; Verification</span>
+                </label>
+              </div>
+            </div>
+
+            <div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;">
+              <button class="btn-action btn-blue" onclick="testAdminGrowthBotToken()" style="width:auto;margin:0;padding:8px 18px;font-size:12.5px;">
+                <span>🧪 Test Bot Connection</span>
+              </button>
+              <button class="btn-action btn-green" onclick="saveAdminGrowthBotConfig()" style="width:auto;margin:0;padding:8px 20px;font-size:12.5px;">
+                <span>💾 Save Configuration</span>
+              </button>
+            </div>
+            <div id="adminGrowthMsg" class="msg" style="display:none;margin-top:12px;"></div>
+          </div>
+
+          <!-- All User Campaigns Table -->
+          <div class="card-title-bar" style="margin-top:20px;margin-bottom:12px;flex-wrap:wrap;gap:10px;">
+            <div>
+              <h3 style="font-size:15px;color:#fff;margin:0;">📋 All Client Growth Campaigns &amp; Assigned Bots</h3>
+              <p style="font-size:11.5px;color:var(--text-muted);margin:3px 0 0 0;">Manage dedicated bot tokens, channel deep-links, DM worker synchronization, and billing kill-switches.</p>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+              <input type="text" id="adminGrowthSearchInput" placeholder="🔍 Search client, bot, slug..." oninput="filterAdminGrowthCampaigns()" class="form-control" style="width:220px;padding:6px 12px;font-size:12px;">
+              <button class="btn-action btn-green" onclick="openAssignCustomerBotModal()" style="width:auto;margin:0;padding:7px 16px;font-size:12px;display:inline-flex;align-items:center;gap:6px;">
+                <span>➕</span>
+                <span>Assign / Create Customer Bot</span>
+              </button>
+            </div>
+          </div>
+          <div class="table-container" style="max-height:480px;overflow-y:auto;">
+            <table class="table" id="adminGrowthCampaignsTable">
+              <thead>
+                <tr>
+                  <th>Client / Owner</th>
+                  <th>Bot &amp; Branding</th>
+                  <th>Target Channel</th>
+                  <th>Billing Status</th>
+                  <th>DM Workers Sync</th>
+                  <th>Bot Deep Link</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="adminGrowthCampaignsBody">
+                <tr><td colspan="7" style="text-align:center;color:#94a3b8;padding:20px;">Loading campaigns...</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Modal: Assign / Create Customer Bot -->
+          <div id="modalAssignCustomerBot" class="modal-overlay">
+            <div class="modal-box" style="max-width:640px;max-height:90vh;overflow-y:auto;border-color:rgba(56,189,248,0.4);">
+              <div class="modal-header">
+                <div>
+                  <h3 id="asb_modalTitle" style="margin:0;color:#38bdf8;font-size:17px;display:flex;align-items:center;gap:8px;">
+                    <span>🤖</span>
+                    <span>Assign Bot to Customer &amp; DM Workers</span>
+                  </h3>
+                  <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">
+                    Provide a custom BotFather bot token for customer's own branding, or use the master bot gateway.
+                  </div>
+                </div>
+                <button class="modal-close-btn" onclick="closeAssignCustomerBotModal()">✕</button>
+              </div>
+
+              <input type="hidden" id="asb_campaign_id">
+
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px;">
+                <div class="form-group" style="margin:0;">
+                  <label>Target Customer Username: <span style="color:#ef4444;">*</span></label>
+                  <input type="text" id="asb_owner" list="asb_userList" class="form-control" placeholder="Select or type username (e.g. rahul)">
+                  <datalist id="asb_userList"></datalist>
+                </div>
+                <div class="form-group" style="margin:0;">
+                  <label>Campaign Slug: <span style="color:#ef4444;">*</span></label>
+                  <input type="text" id="asb_slug" class="form-control" placeholder="e.g. rahul_vip" style="font-family:'JetBrains Mono',monospace;">
+                </div>
+              </div>
+
+              <div class="form-group" style="margin-top:12px;">
+                <label>Bot Branding Name / Title: <span style="color:#ef4444;">*</span></label>
+                <input type="text" id="asb_title" class="form-control" placeholder="e.g. Rahul VIP Recovery Bot">
+              </div>
+
+              <div style="background:rgba(15,23,42,0.6);border:1px solid rgba(56,189,248,0.25);border-radius:12px;padding:12px;margin-top:14px;">
+                <div style="font-size:12.5px;font-weight:700;color:#38bdf8;margin-bottom:8px;display:flex;align-items:center;gap:6px;">
+                  <span>🔑</span>
+                  <span>Dedicated Bot Token (Optional - from @BotFather)</span>
+                </div>
+                <div style="font-size:11.5px;color:#94a3b8;margin-bottom:10px;">
+                  Agar customer ko unke apne branding se bot dena hai, to @BotFather se bot banayein aur uska token yahan dalein. Khali chhodne par Master Bot use hoga.
+                </div>
+                <div style="display:flex;gap:8px;">
+                  <input type="text" id="asb_bot_token" class="form-control" placeholder="e.g. 7123456789:AAHq_w7..." style="font-family:'JetBrains Mono',monospace;flex:1;">
+                  <button type="button" class="btn-action btn-blue" onclick="testAssignCustomerBotToken()" style="width:auto;margin:0;padding:6px 14px;font-size:11.5px;white-space:nowrap;">
+                    🧪 Test Token
+                  </button>
+                </div>
+                <div id="asb_token_test_msg" style="display:none;font-size:11.5px;margin-top:6px;"></div>
+
+                <div class="form-group" style="margin-top:10px;margin-bottom:0;">
+                  <label>Bot Username (without @):</label>
+                  <input type="text" id="asb_bot_username" class="form-control" placeholder="e.g. RahulRecoveryBot" style="font-family:'JetBrains Mono',monospace;">
+                </div>
+              </div>
+
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px;">
+                <div class="form-group" style="margin:0;">
+                  <label>Target Channel Username / Link: <span style="color:#ef4444;">*</span></label>
+                  <input type="text" id="asb_channel" class="form-control" placeholder="e.g. @RahulPredictions">
+                </div>
+                <div class="form-group" style="margin:0;">
+                  <label>Customer Personal Telegram ID / Handle:</label>
+                  <input type="text" id="asb_customer_tg" class="form-control" placeholder="e.g. 987654321 or @RahulTg">
+                </div>
+              </div>
+
+              <div class="form-group" style="margin-top:12px;">
+                <label>Banner Photo URL (or Telegram File ID):</label>
+                <input type="text" id="asb_banner_url" class="form-control" placeholder="e.g. https://... or telegram file_id">
+              </div>
+
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px;">
+                <div class="form-group" style="margin:0;">
+                  <label>Billing Status:</label>
+                  <select id="asb_billing_status" class="form-control">
+                    <option value="active">🟢 Active (Bill Paid)</option>
+                    <option value="unpaid">🔴 Unpaid (Bot Suspended / Off)</option>
+                    <option value="suspended">⏸️ Suspended</option>
+                  </select>
+                </div>
+                <div class="form-group" style="margin:0;">
+                  <label>Campaign Status:</label>
+                  <select id="asb_status" class="form-control">
+                    <option value="active">● Active</option>
+                    <option value="paused">○ Paused</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Sync to DM Worker Checkbox -->
+              <div style="margin-top:16px;background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.3);border-radius:12px;padding:12px;">
+                <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;margin:0;">
+                  <input type="checkbox" id="asb_sync_workers" checked style="width:20px;height:20px;accent-color:#22c55e;margin-top:2px;">
+                  <div>
+                    <b style="color:#4ade80;font-size:13px;">Auto-Assign to Customer's Audio Stream DM Workers</b>
+                    <div style="font-size:11.5px;color:#94a3b8;margin-top:3px;line-height:1.4;">
+                      Is customer ke audio stream DM worker accounts me yeh Bot Link automatically bind ho jayega. Audio stream listeners ko yahi bot link deliver hoga!
+                    </div>
+                  </div>
+                </label>
+              </div>
+
+              <div id="asb_msg" class="msg" style="display:none;margin-top:12px;"></div>
+
+              <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:18px;">
+                <button type="button" class="btn-action" onclick="closeAssignCustomerBotModal()" style="width:auto;margin:0;padding:8px 18px;background:rgba(148,163,184,0.15);color:#cbd5e1;">Cancel</button>
+                <button type="button" class="btn-action btn-green" onclick="saveAssignCustomerBot()" style="width:auto;margin:0;padding:8px 22px;font-size:13px;">
+                  💾 Save &amp; Assign Bot
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -5119,6 +5363,7 @@ const tabTitles = {
   apipool: 'Global Telegram API Key Pool (10 Slots)',
   rate: 'Telegram API Rate & Health Monitor',
   bot: 'Super Admin Master Bot',
+  growth: 'Master Growth & Broadcast Engine',
   generator: 'Bulk Telegram Bot Generator & Vault',
   reactions: 'Channel Multi-Bot Reactions',
   ai: 'Universal AI Engine &amp; Multi-Provider Switching Hub',
@@ -5132,6 +5377,8 @@ const tabTitles = {
 const esc = s => String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 const escJs = s => (s || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '\\"');
 const escapeHtml = esc;
+window.escapeHtml = escapeHtml;
+window.esc = esc;
 
 function switchAdminTab(tab, isBack = false) {
   if (!isBack) {
@@ -5141,7 +5388,7 @@ function switchAdminTab(tab, isBack = false) {
     }
   }
 
-  ['overview', 'users', 'billing', 'exp', 'queues', 'proxy', 'apipool', 'ai', 'rate', 'bot', 'generator', 'reactions', 'vps', 'create', 'pwd', 'prd', 'mobile_app'].forEach(t => {
+  ['overview', 'users', 'billing', 'exp', 'queues', 'proxy', 'apipool', 'ai', 'rate', 'bot', 'growth', 'generator', 'reactions', 'vps', 'create', 'pwd', 'prd', 'mobile_app'].forEach(t => {
     const el = document.getElementById('view_' + t);
     const nav = document.getElementById('nav_' + t);
     if (el) el.style.display = (t === tab) ? 'block' : 'none';
@@ -5167,6 +5414,7 @@ function switchAdminTab(tab, isBack = false) {
   if (tab === 'apipool') loadApiPoolData();
   if (tab === 'rate') loadRateMonitorData();
   if (tab === 'bot') populateAdminBotTab();
+  if (tab === 'growth') loadAdminGrowthTab();
   if (tab === 'generator') loadBotGeneratorTab();
   if (tab === 'reactions') loadChannelReactionsTab();
   if (tab === 'vps') loadVpsHealth(true);
@@ -7367,6 +7615,484 @@ function onBotRateChanged() {
   if (hintEl) hintEl.innerHTML = `<b>${bots} Bots</b> × <b>₹${rate}/bot/day</b> = <b style="color:#38bdf8;">₹${dailyTotal}/day</b> (7-Day: ₹${weeklyTotal})`;
 
   updateBillingExpiryCalc();
+}
+
+// ==================== MASTER GROWTH & BROADCAST TAB JS ====================
+let adminGrowthAllCampaigns = [];
+
+async function loadAdminGrowthTab(showToastAlert = false) {
+  try {
+    // 1. Fetch Config
+    const cfgRes = await fetch('/api/admin/growth/config?t=' + Date.now());
+    if (cfgRes.ok) {
+      const cfgData = await cfgRes.json();
+      if (cfgData.success && cfgData.config) {
+        document.getElementById('adminGrowthBotToken').value = cfgData.config.bot_token || '';
+        document.getElementById('adminGrowthBotUsername').value = cfgData.config.bot_username || '';
+        document.getElementById('adminGrowthBroadcastDelay').value = cfgData.config.global_broadcast_delay_ms || 40;
+        document.getElementById('adminGrowthBotEnabled').checked = cfgData.config.enabled !== false;
+
+        const badge = document.getElementById('growthBotStatusBadge');
+        if (cfgData.config.bot_token && cfgData.config.enabled) {
+          badge.textContent = `🟢 Active (@${cfgData.config.bot_username || 'Bot'})`;
+          badge.style.background = 'rgba(34,197,94,0.15)';
+          badge.style.color = '#4ade80';
+          badge.style.borderColor = 'rgba(34,197,94,0.3)';
+        } else {
+          badge.textContent = '🔴 Not Configured';
+          badge.style.background = 'rgba(239,68,68,0.15)';
+          badge.style.color = '#f87171';
+          badge.style.borderColor = 'rgba(239,68,68,0.3)';
+        }
+      }
+    }
+
+    // 2. Fetch Overview & Campaigns
+    const ovRes = await fetch('/api/admin/growth/overview?t=' + Date.now());
+    if (ovRes.ok) {
+      const ovData = await ovRes.json();
+      if (ovData.success) {
+        const stats = ovData.stats || { totalCampaigns: 0, totalSubscribers: 0, totalJoined: 0 };
+        document.getElementById('growthMetricCampaigns').textContent = stats.totalCampaigns || 0;
+        document.getElementById('growthMetricSubscribers').textContent = stats.totalSubscribers || 0;
+        document.getElementById('growthMetricJoined').textContent = stats.totalJoined || 0;
+
+        const rate = stats.totalSubscribers > 0 
+          ? Math.round((stats.totalJoined / stats.totalSubscribers) * 100) 
+          : 0;
+        document.getElementById('growthMetricRate').textContent = `${rate}% Join Conversion Rate`;
+
+        adminGrowthAllCampaigns = ovData.campaigns || [];
+        renderAdminGrowthCampaigns(adminGrowthAllCampaigns, ovData.bot_username || '');
+      }
+    }
+
+    if (showToastAlert) showToast('Growth Engine Stats refreshed!', false);
+  } catch (err) {
+    console.error('[ADMIN GROWTH] load error:', err);
+  }
+}
+
+function copyBotLinkQuick(text) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(() => showToast('Bot Link copied to clipboard!', false));
+  } else {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    showToast('Bot Link copied!', false);
+  }
+}
+
+function renderAdminGrowthCampaigns(campaigns, botUsername) {
+  const tbody = document.getElementById('adminGrowthCampaignsBody');
+  if (!tbody) return;
+
+  if (!campaigns || campaigns.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:#94a3b8;padding:28px;">No growth campaigns assigned yet. Click <b>"➕ Assign / Create Customer Bot"</b> above to assign a bot to a customer!</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = campaigns.map(c => {
+    const effectiveBot = c.bot_username || botUsername || '';
+    const deepLink = effectiveBot && c.campaign_slug 
+      ? `https://t.me/${effectiveBot}?start=${c.campaign_slug}` 
+      : (effectiveBot ? `https://t.me/${effectiveBot}` : `t.me/?start=${c.campaign_slug}`);
+    const chUrl = c.channel_username ? (c.channel_username.startsWith('http') ? c.channel_username : `https://t.me/${c.channel_username.replace(/^@/, '')}`) : '#';
+
+    const isUnpaid = c.billing_status === 'unpaid' || c.billing_status === 'suspended';
+    const isDedicated = Boolean(c.bot_token && c.bot_token.trim());
+
+    return `
+      <tr>
+        <td>
+          <b style="color:#fff;font-size:13.5px;">${esc(c.owner)}</b>
+          <div style="font-size:11px;color:#94a3b8;margin-top:2px;">
+            <span>Accounts: <b>${c.total_worker_accounts || 0}</b></span>
+          </div>
+        </td>
+        <td>
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+            <b style="color:#38bdf8;">${esc(c.title || 'Untitled Bot')}</b>
+            ${isDedicated 
+              ? `<span style="background:rgba(168,85,247,0.18);color:#c084fc;border:1px solid rgba(168,85,247,0.35);padding:1px 6px;border-radius:4px;font-size:10px;font-weight:700;">👑 DEDICATED</span>`
+              : `<span style="background:rgba(56,189,248,0.15);color:#38bdf8;border:1px solid rgba(56,189,248,0.3);padding:1px 6px;border-radius:4px;font-size:10px;font-weight:700;">🌐 MASTER BOT</span>`
+            }
+          </div>
+          <div style="font-size:11px;color:#cbd5e1;margin-top:2px;font-family:'JetBrains Mono',monospace;">
+            @${esc(c.bot_username || botUsername || 'NoBot')} 
+            <span style="color:#94a3b8;">(/${esc(c.campaign_slug)})</span>
+          </div>
+        </td>
+        <td>
+          <a href="${chUrl}" target="_blank" style="color:#4ade80;text-decoration:none;font-weight:600;display:inline-flex;align-items:center;gap:4px;">
+            <span>📢 @${esc(c.channel_username || 'None')}</span>
+          </a>
+        </td>
+        <td>
+          <div style="display:flex;flex-direction:column;gap:4px;">
+            ${isUnpaid 
+              ? `<button onclick="toggleCampaignBilling('${esc(c.campaign_slug)}', 'unpaid')" class="btn-action" style="width:auto;margin:0;padding:3px 8px;font-size:11px;background:rgba(239,68,68,0.2);color:#f87171;border:1px solid rgba(239,68,68,0.4);" title="Click to mark Paid & Turn Bot ON">🔴 Unpaid (Bot OFF) ⚡</button>`
+              : `<button onclick="toggleCampaignBilling('${esc(c.campaign_slug)}', 'active')" class="btn-action" style="width:auto;margin:0;padding:3px 8px;font-size:11px;background:rgba(34,197,94,0.18);color:#4ade80;border:1px solid rgba(34,197,94,0.4);" title="Click to mark Unpaid & Shut OFF Bot">🟢 Paid (Active) ⚡</button>`
+            }
+            <span style="font-size:10px;color:#94a3b8;">${c.status === 'active' ? '● Engine Active' : '○ Engine Paused'}</span>
+          </div>
+        </td>
+        <td>
+          ${c.is_workers_synced 
+            ? `<span style="background:rgba(34,197,94,0.15);color:#4ade80;border:1px solid rgba(34,197,94,0.3);padding:3px 8px;border-radius:12px;font-size:11px;font-weight:700;display:inline-flex;align-items:center;gap:4px;">
+                <span>✅ Synced (${c.synced_worker_accounts || 0})</span>
+               </span>`
+            : `<button onclick="syncCampaignToWorkers('${esc(c.id)}', '${esc(c.campaign_slug)}')" class="btn-action btn-blue" style="width:auto;margin:0;padding:3px 8px;font-size:10.5px;display:inline-flex;align-items:center;gap:4px;" title="Click to bind this bot link to all of this customer's worker accounts">
+                <span>⚡ Sync Workers</span>
+                <span style="opacity:0.8;">(${c.synced_worker_accounts || 0}/${c.total_worker_accounts || 0})</span>
+               </button>`
+          }
+        </td>
+        <td>
+          <div style="display:flex;align-items:center;gap:4px;">
+            <a href="${deepLink}" target="_blank" style="background:rgba(56,189,248,0.12);color:#38bdf8;border:1px solid rgba(56,189,248,0.3);padding:3px 7px;border-radius:6px;font-size:11px;text-decoration:none;font-family:monospace;white-space:nowrap;">
+              🔗 Open
+            </a>
+            <button onclick="copyBotLinkQuick('${deepLink}')" class="btn-action" style="width:auto;margin:0;padding:3px 6px;font-size:11px;background:rgba(148,163,184,0.15);color:#cbd5e1;" title="Copy Bot Link">
+              📋
+            </button>
+          </div>
+        </td>
+        <td>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <button onclick="openAssignCustomerBotModal('${esc(c.id)}')" class="btn-action btn-blue" style="width:auto;margin:0;padding:4px 8px;font-size:11px;" title="Edit Bot & Worker Settings">
+              ✏️ Edit
+            </button>
+            <button onclick="deleteCampaignAdmin('${esc(c.id)}', '${esc(c.title || c.campaign_slug)}')" class="btn-action btn-red" style="width:auto;margin:0;padding:4px 8px;font-size:11px;" title="Delete Campaign">
+              🗑️
+            </button>
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+async function openAssignCustomerBotModal(campaignId = null) {
+  const modal = document.getElementById('modalAssignCustomerBot');
+  if (!modal) return;
+
+  // Clear or reset fields
+  document.getElementById('asb_campaign_id').value = '';
+  document.getElementById('asb_owner').value = '';
+  document.getElementById('asb_slug').value = '';
+  document.getElementById('asb_title').value = '';
+  document.getElementById('asb_bot_token').value = '';
+  document.getElementById('asb_bot_username').value = '';
+  document.getElementById('asb_channel').value = '';
+  document.getElementById('asb_customer_tg').value = '';
+  document.getElementById('asb_banner_url').value = '';
+  document.getElementById('asb_billing_status').value = 'active';
+  document.getElementById('asb_status').value = 'active';
+  document.getElementById('asb_sync_workers').checked = true;
+  document.getElementById('asb_token_test_msg').style.display = 'none';
+  document.getElementById('asb_msg').style.display = 'none';
+
+  // Populate users datalist
+  try {
+    const uRes = await fetch('/api/admin/users?t=' + Date.now());
+    if (uRes.ok) {
+      const uData = await uRes.json();
+      const dl = document.getElementById('asb_userList');
+      if (dl && Array.isArray(uData.users)) {
+        dl.innerHTML = uData.users.map(u => `<option value="${esc(u.username)}">${esc(u.username)} (${u.accounts_count || 0} accounts)</option>`).join('');
+      }
+    }
+  } catch (e) {}
+
+  if (campaignId) {
+    const c = adminGrowthAllCampaigns.find(x => x.id === campaignId);
+    if (c) {
+      document.getElementById('asb_modalTitle').innerHTML = `<span>✏️</span><span>Edit Bot for ${esc(c.owner)}</span>`;
+      document.getElementById('asb_campaign_id').value = c.id;
+      document.getElementById('asb_owner').value = c.owner || '';
+      document.getElementById('asb_slug').value = c.campaign_slug || '';
+      document.getElementById('asb_title').value = c.title || '';
+      document.getElementById('asb_bot_token').value = c.bot_token || '';
+      document.getElementById('asb_bot_username').value = c.bot_username || '';
+      document.getElementById('asb_channel').value = c.channel_username || '';
+      document.getElementById('asb_customer_tg').value = c.customer_tg_id || '';
+      document.getElementById('asb_banner_url').value = c.banner_url || '';
+      document.getElementById('asb_billing_status').value = c.billing_status || 'active';
+      document.getElementById('asb_status').value = c.status || 'active';
+    }
+  } else {
+    document.getElementById('asb_modalTitle').innerHTML = `<span>🤖</span><span>Assign Bot to Customer &amp; DM Workers</span>`;
+  }
+
+  modal.style.display = 'flex';
+}
+
+function closeAssignCustomerBotModal() {
+  const modal = document.getElementById('modalAssignCustomerBot');
+  if (modal) modal.style.display = 'none';
+}
+
+async function testAssignCustomerBotToken() {
+  const token = (document.getElementById('asb_bot_token')?.value || '').trim();
+  const testMsg = document.getElementById('asb_token_test_msg');
+  if (!token) {
+    if (testMsg) {
+      testMsg.style.display = 'block';
+      testMsg.style.color = '#f87171';
+      testMsg.textContent = 'Please enter a Bot Token from @BotFather first!';
+    }
+    return;
+  }
+
+  if (testMsg) {
+    testMsg.style.display = 'block';
+    testMsg.style.color = '#38bdf8';
+    testMsg.textContent = 'Testing token connection...';
+  }
+
+  try {
+    const res = await fetch('/api/admin/growth/test-token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ bot_token: token })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      if (data.username) {
+        document.getElementById('asb_bot_username').value = data.username;
+      }
+      testMsg.style.color = '#4ade80';
+      testMsg.textContent = `✅ Connected! Bot: @${data.username} (${data.first_name || 'Bot'})`;
+      showToast(`Connected to @${data.username}!`, false);
+    } else {
+      testMsg.style.color = '#f87171';
+      testMsg.textContent = `❌ Failed: ${data.msg || 'Invalid Bot Token'}`;
+    }
+  } catch (err) {
+    if (testMsg) {
+      testMsg.style.color = '#f87171';
+      testMsg.textContent = `❌ Error: ${err.message}`;
+    }
+  }
+}
+
+async function saveAssignCustomerBot() {
+  const cid = document.getElementById('asb_campaign_id')?.value;
+  const owner = (document.getElementById('asb_owner')?.value || '').trim();
+  const slug = (document.getElementById('asb_slug')?.value || '').trim();
+  const title = (document.getElementById('asb_title')?.value || '').trim();
+  const bot_token = (document.getElementById('asb_bot_token')?.value || '').trim();
+  const bot_username = (document.getElementById('asb_bot_username')?.value || '').trim().replace(/^@/, '');
+  const channel = (document.getElementById('asb_channel')?.value || '').trim();
+  const customer_tg = (document.getElementById('asb_customer_tg')?.value || '').trim();
+  const banner_url = (document.getElementById('asb_banner_url')?.value || '').trim();
+  const billing_status = document.getElementById('asb_billing_status')?.value || 'active';
+  const status = document.getElementById('asb_status')?.value || 'active';
+  const sync_workers = document.getElementById('asb_sync_workers')?.checked !== false;
+
+  const msgEl = document.getElementById('asb_msg');
+  if (!owner) {
+    show('asb_msg', 'Target Customer Username is required!', true);
+    return;
+  }
+  if (!slug) {
+    show('asb_msg', 'Campaign Slug is required!', true);
+    return;
+  }
+  if (!title) {
+    show('asb_msg', 'Bot Branding Title is required!', true);
+    return;
+  }
+
+  showToast('Saving and assigning Bot to customer...', false);
+  try {
+    const res = await fetch('/api/admin/growth/campaigns/save', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id: cid || undefined,
+        owner,
+        campaign_slug: slug,
+        title,
+        bot_token: bot_token || undefined,
+        bot_username: bot_username || undefined,
+        channel_username: channel,
+        customer_tg_id: customer_tg || undefined,
+        banner_url: banner_url || undefined,
+        billing_status,
+        status,
+        sync_to_workers: sync_workers
+      })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      showToast(data.msg || 'Bot assigned successfully!', false);
+      closeAssignCustomerBotModal();
+      await loadAdminGrowthTab();
+    } else {
+      show('asb_msg', `❌ ${data.msg || 'Failed to save bot campaign'}`, true);
+      showToast(data.msg || 'Save error', true);
+    }
+  } catch (err) {
+    show('asb_msg', `❌ Save Error: ${err.message}`, true);
+  }
+}
+
+async function toggleCampaignBilling(slug, currentStatus) {
+  const newStatus = (currentStatus === 'unpaid' || currentStatus === 'suspended') ? 'active' : 'unpaid';
+  const actionText = newStatus === 'active' ? 'Mark Paid & Turn Bot ON' : 'Mark Unpaid & Turn Bot OFF';
+
+  if (!confirm(`Are you sure you want to ${actionText} for campaign "/${slug}"?`)) {
+    return;
+  }
+
+  showToast(`Updating billing status to ${newStatus}...`, false);
+  try {
+    const res = await fetch('/api/admin/growth/campaigns/toggle-billing', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        slug,
+        status: newStatus,
+        notes: `Admin 1-click billing toggle to ${newStatus}`
+      })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      showToast(`Campaign /${slug} is now ${newStatus === 'active' ? '🟢 Active & ON' : '🔴 Unpaid & OFF'}!`, false);
+      await loadAdminGrowthTab();
+    } else {
+      showToast(`Error: ${data.msg || 'Failed to toggle billing'}`, true);
+    }
+  } catch (err) {
+    showToast(`Error: ${err.message}`, true);
+  }
+}
+
+async function syncCampaignToWorkers(campaignId, slug) {
+  showToast(`Syncing bot link to customer worker accounts...`, false);
+  try {
+    const res = await fetch('/api/admin/growth/campaigns/sync-workers', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: campaignId, slug })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      showToast(data.msg || 'Workers synced successfully!', false);
+      await loadAdminGrowthTab();
+    } else {
+      showToast(`Sync failed: ${data.msg || 'Error'}`, true);
+    }
+  } catch (err) {
+    showToast(`Sync error: ${err.message}`, true);
+  }
+}
+
+async function deleteCampaignAdmin(campaignId, title) {
+  if (!confirm(`Are you sure you want to delete campaign "${title}"? All deep-links and data for this campaign will be removed.`)) {
+    return;
+  }
+  showToast('Deleting campaign...', false);
+  try {
+    const res = await fetch('/api/admin/growth/campaigns/delete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: campaignId })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      showToast('Campaign deleted successfully!', false);
+      await loadAdminGrowthTab();
+    } else {
+      showToast(`Delete failed: ${data.msg || 'Error'}`, true);
+    }
+  } catch (err) {
+    showToast(`Delete error: ${err.message}`, true);
+  }
+}
+
+function filterAdminGrowthCampaigns() {
+  const q = (document.getElementById('adminGrowthSearchInput')?.value || '').toLowerCase().trim();
+  if (!q) {
+    renderAdminGrowthCampaigns(adminGrowthAllCampaigns, document.getElementById('adminGrowthBotUsername')?.value || '');
+    return;
+  }
+  const filtered = adminGrowthAllCampaigns.filter(c => 
+    (c.owner && c.owner.toLowerCase().includes(q)) ||
+    (c.campaign_slug && c.campaign_slug.toLowerCase().includes(q)) ||
+    (c.channel_username && c.channel_username.toLowerCase().includes(q)) ||
+    (c.title && c.title.toLowerCase().includes(q)) ||
+    (c.bot_username && c.bot_username.toLowerCase().includes(q))
+  );
+  renderAdminGrowthCampaigns(filtered, document.getElementById('adminGrowthBotUsername')?.value || '');
+}
+
+async function testAdminGrowthBotToken() {
+  const token = (document.getElementById('adminGrowthBotToken')?.value || '').trim();
+  const msgEl = document.getElementById('adminGrowthMsg');
+  if (!token) {
+    show('adminGrowthMsg', 'Please enter a Telegram Bot Token to test!', true);
+    return;
+  }
+  showToast('Testing Bot Token connection with Telegram API...', false);
+  try {
+    const res = await fetch('/api/admin/growth/test-token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ bot_token: token })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      if (data.username) {
+        document.getElementById('adminGrowthBotUsername').value = data.username;
+      }
+      show('adminGrowthMsg', `✅ Bot Connected Successfully! Bot: @${data.username} (${data.first_name})`, false);
+      showToast(`Connected to @${data.username}!`, false);
+    } else {
+      show('adminGrowthMsg', `❌ Connection Failed: ${data.msg || 'Invalid Token'}`, true);
+      showToast(`Bot Connection Failed: ${data.msg || 'Invalid Token'}`, true);
+    }
+  } catch (err) {
+    show('adminGrowthMsg', `❌ Test Error: ${err.message}`, true);
+  }
+}
+
+async function saveAdminGrowthBotConfig() {
+  const token = (document.getElementById('adminGrowthBotToken')?.value || '').trim();
+  const uname = (document.getElementById('adminGrowthBotUsername')?.value || '').trim().replace(/^@/, '');
+  const delay = Number(document.getElementById('adminGrowthBroadcastDelay')?.value) || 40;
+  const enabled = document.getElementById('adminGrowthBotEnabled')?.checked !== false;
+
+  showToast('Saving Master Growth Bot configuration...', false);
+  try {
+    const res = await fetch('/api/admin/growth/config', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        bot_token: token,
+        bot_username: uname,
+        global_broadcast_delay_ms: delay,
+        enabled: enabled
+      })
+    });
+    const data = await res.json();
+    if (data.success) {
+      show('adminGrowthMsg', '✅ Master Growth Bot Configuration Saved Successfully!', false);
+      showToast('Master Growth Bot Saved!', false);
+      await loadAdminGrowthTab();
+    } else {
+      show('adminGrowthMsg', `❌ Save Error: ${data.error || 'Failed to save'}`, true);
+      showToast('Failed to save config', true);
+    }
+  } catch (err) {
+    show('adminGrowthMsg', `❌ Save Error: ${err.message}`, true);
+  }
 }
 
 function setBotRatePreset(rate) {
@@ -12119,30 +12845,44 @@ function promptSetUserRate(uname, currentRate) {
 function promptSendEnglishReminder(uname, balanceDue) {
   const curr = billingData.currency === 'INR' ? '₹' : '$';
   const u = (billingData.user_ledgers || []).find(x => x.username === uname);
-  const activeBots = u ? u.active_accounts : 1;
-  const expDate = u?.expiry_date ? formatDisplayDate(u.expiry_date) : 'Active';
-  const cycleDays = u?.billing_cycle_days || 7;
-  const paymentModel = u?.payment_model || (balanceDue > 0 ? 'postpaid' : 'advance');
-  const modelText = paymentModel === 'postpaid' ? `Postpaid (${cycleDays} Days Cycle - Due on ${cycleDays + 1}th day)` : `Prepaid (${cycleDays} Days Advance)`;
+  let daysRemaining = 999;
+  if (u?.expiry_date) {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const exp = new Date(u.expiry_date + 'T23:59:59Z');
+      const now = new Date(today + 'T00:00:00Z');
+      daysRemaining = Math.round((exp.getTime() - now.getTime()) / (86400 * 1000));
+    } catch {}
+  }
 
-  const msg = `━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-    `📊 TELEBOT ACCOUNT BILLING SUMMARY\n` +
-    `━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-    `Dear ${uname},\n\n` +
-    `Here is the latest status of your TeleBot Direct Messaging subscription:\n\n` +
-    `• Active Accounts: ${activeBots} / ${u?.max_accounts || 1} Bot(s)\n` +
-    `• Plan Type: ${modelText}\n` +
-    `• Subscription Validity: ${expDate}\n` +
-    `• Total Billed: ${curr}${(u?.total_billed || 0).toLocaleString()}\n` +
-    `• Total Paid: ${curr}${(u?.total_paid || 0).toLocaleString()}\n` +
-    `• Outstanding Balance Due: ${curr}${balanceDue.toLocaleString()}\n\n` +
-    `Please clear your pending balance to maintain uninterrupted high-speed direct messaging flow.\n\n` +
-    `Thank you!\n` +
-    `━━━━━━━━━━━━━━━━━━━━━━━━━━`;
+  let msg = '';
+  if (daysRemaining === 1) {
+    // 6th Day Gentle Reminder (Strictly NO AMOUNT mentioned per user instruction)
+    msg = `━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+      `🔔 Gentle Reminder: Bill Date Tomorrow\n` +
+      `━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+      `Hello ${uname},\n\n` +
+      `This is a gentle reminder that tomorrow is your official billing date for your TeleBot service.\n\n` +
+      `Please clear your bill tomorrow to keep your bot active and avoid your bot being turned off.\n\n` +
+      `Thank you!\n` +
+      `━━━━━━━━━━━━━━━━━━━━━━━━━━`;
+  } else {
+    // 7th Day Bill Date Reminder (DUE AMOUNT ONLY - excluding partial payments)
+    msg = `━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+      `⚠️ Action Required: Today is Your Bill Date\n` +
+      `━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+      `Hello ${uname},\n\n` +
+      `Today is your official bill date for your TeleBot service. Please clear your remaining due amount to keep your bot active.\n\n` +
+      `💰 Pending Due Amount: ${curr}${balanceDue.toLocaleString()}\n\n` +
+      `Please clear your due amount today so your bot does not get turned off.\n` +
+      `If you have already paid, please share the payment screenshot with Admin.\n\n` +
+      `Thank you!\n` +
+      `━━━━━━━━━━━━━━━━━━━━━━━━━━`;
+  }
 
   if (navigator.clipboard) {
     navigator.clipboard.writeText(msg);
-    alert(`English payment reminder notice for ${uname} copied to clipboard! You can paste and send directly to the customer.`);
+    alert(`English reminder notice for ${uname} copied to clipboard! You can paste and send directly to the customer.`);
   } else {
     prompt('Copy English Billing Notice:', msg);
   }

@@ -10,8 +10,6 @@
     "skipLibCheck": true,
     "noEmit": true
   },
-  "include": [
-    "server.build.ts",
-    "src/**/*"
-  ]
+  "include": ["server.ts", "src/**/*"]
 }
+

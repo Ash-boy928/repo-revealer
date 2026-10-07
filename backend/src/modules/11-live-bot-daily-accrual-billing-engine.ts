@@ -449,8 +449,8 @@ async function registerTelegramBotCommands(botToken: string, force: boolean = fa
   } catch (e) {}
 }
 
-// Global Billing Reminder Helper function:
-async function sendUserBillingReminder(username: string): Promise<{ ok: boolean; msg: string }> {
+// Global Billing Reminder Helper function (6th Day Gentle Reminder & 7th Day Due Reminder in Easy English):
+async function sendUserBillingReminder(username: string, reminderType?: 'auto' | 'day6_gentle' | 'day7_due'): Promise<{ ok: boolean; msg: string }> {
   try {
     const u = usersList.find((x: any) => (x.username || '').toLowerCase() === (username || '').toLowerCase());
     if (!u) return { ok: false, msg: `User "${username}" not found.` };
@@ -460,60 +460,79 @@ async function sendUserBillingReminder(username: string): Promise<{ ok: boolean;
     const adminToken = adminUser ? (adminUser.alert_bot_token || '').trim() : '';
 
     // Target chat ID or Channel ID
-    const targetChatId = (u.alert_chat_id || u.telegram_id || '').toString().trim();
-    const targetBotToken = (u.alert_bot_token || '').trim() || adminToken;
+    let targetChatId = (u.alert_chat_id || u.telegram_id || '').toString().trim();
+    let targetBotToken = (u.alert_bot_token || '').trim() || adminToken;
+
+    if (!targetChatId || !targetBotToken) {
+      try {
+        const camps = getCampaignsByOwner(u.username);
+        const campWithBot = camps.find(c => c.bot_token && c.customer_tg_id);
+        if (campWithBot) {
+          if (!targetChatId && campWithBot.customer_tg_id) targetChatId = campWithBot.customer_tg_id.trim();
+          if (!targetBotToken && campWithBot.bot_token) targetBotToken = campWithBot.bot_token.trim();
+        }
+      } catch {}
+    }
+
+    if (!targetBotToken || !targetChatId) {
+      return { ok: false, msg: `⚠️ User ${u.username} does not have a linked Telegram Chat ID or Bot token configured.` };
+    }
 
     // Refresh daily usage & ledger
     accrueDailyUsageForUser(u.username);
     const uLedger = getUserLedgerSummary(u.username);
-    const balanceDue = Number(uLedger.balance_due || 0);
+    const balanceDue = Math.max(0, Number(uLedger.balance_due || 0));
     const curr = (billingStore.currency || 'INR') === 'INR' ? '₹' : '$';
-    const dueStr = balanceDue > 0 ? `🔴 ${curr}${balanceDue.toLocaleString()} Due (Pending)` : `🟢 ${curr}0 (Fully Settled)`;
 
-    const uAccs = Array.from(accounts.values()).filter((a: any) => (a.owner || 'admin').toLowerCase() === u.username.toLowerCase());
-    const activeBots = uAccs.length;
-    const liveBots = uAccs.filter((a: any) => a.running).length;
-    const cfg = (billingStore.user_configs || {})[u.username] || {};
-    const cycleDays = Number(cfg.billing_cycle_days || u.billing_cycle_days || 7) || 7;
-    const paymentModel = cfg.payment_model || u.billing_model || (balanceDue > 0 ? 'postpaid' : 'advance');
-    const modelText = paymentModel === 'postpaid' ? `7-Day Postpaid` : `Prepaid (Advance)`;
-
-    const dateRange = getUserCycleDateRange(u);
-
-    // Admin UPI for easy payment
-    const adminUpi = (adminUser as any)?.upi_id || (adminUser as any)?.gpay_number || '';
-    const webLoginUrl = getWebLoginUrl();
-
-    // Pure Easy English Polite Notification
-    const reminderMsg = `━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-      `🧾 <b>TELEBOT SUBSCRIPTION & BILLING NOTICE</b>\n` +
-      `━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-      `Hello <b>${u.display_name || u.username}</b>,\n\n` +
-      `Here is the latest billing summary for your TeleBot service:\n\n` +
-      `👤 <b>Customer Account:</b> <code>${u.username}</code>\n` +
-      `🤖 <b>Connected Bots:</b> <b>${activeBots} / ${u.max_accounts || 1} Allowed</b> (🟢 ${liveBots} Live)\n` +
-      `📅 <b>Plan Period:</b> <code>${dateRange.formattedRange}</code>\n` +
-      `⏳ <b>Validity Expiry:</b> <b>${formatDisplayDate(u.expiry_date)}</b>\n` +
-      `💳 <b>Billing Plan:</b> ${modelText} (${cycleDays} Days Cycle)\n\n` +
-      `📊 <b>Financial Status:</b>\n` +
-      `• 💵 <b>Total Invoiced:</b> ${curr}${(uLedger.total_billed || 0).toLocaleString()}\n` +
-      `• 💰 <b>Total Received:</b> ${curr}${(uLedger.total_paid || 0).toLocaleString()}\n` +
-      `• ⚠️ <b>Outstanding Balance Due:</b> <b>${dueStr}</b>\n\n` +
-      (balanceDue > 0 
-        ? `🔔 <i>Please clear your pending payment of <b>${curr}${balanceDue.toLocaleString()}</b> to ensure uninterrupted direct messaging service.</i>\n\n` +
-          (adminUpi ? `💳 <b>Payment UPI ID:</b> <code>${adminUpi}</code>\n` : '') +
-          `<i>After completing the payment, please share the transaction screenshot with Administrator for instant verification. Thank you!</i>\n\n`
-        : `✅ <i>Your account is active and all dues are cleared. Thank you for your continued business!</i>\n\n`) +
-      `🌐 <b>Dashboard:</b> ${webLoginUrl}\n` +
-      `━━━━━━━━━━━━━━━━━━━━━━━━━━`;
-
-    if (targetBotToken && targetChatId) {
-      const res = await sendTelegramMessage(targetBotToken, targetChatId, reminderMsg);
-      if (res && res.ok) {
-        return { ok: true, msg: `✅ Payment reminder sent in English to ${u.username} (Chat ID: ${targetChatId})!` };
+    const diffDays = getDaysUntilExpiry(u.expiry_date);
+    let effectiveType = reminderType || 'auto';
+    if (effectiveType === 'auto') {
+      if (diffDays === 1) {
+        effectiveType = 'day6_gentle';
+      } else {
+        effectiveType = 'day7_due';
       }
     }
-    return { ok: false, msg: `⚠️ User ${u.username} does not have a linked Telegram Chat ID or Bot token configured.` };
+
+    const adminUpi = (adminUser as any)?.upi_id || (adminUser as any)?.gpay_number || '';
+    const webLoginUrl = getWebLoginUrl();
+    const displayName = u.display_name || u.username;
+
+    let reminderMsg = '';
+
+    if (effectiveType === 'day6_gentle') {
+      // 6th Day Gentle Reminder (Strictly NO AMOUNT mentioned per user instruction)
+      reminderMsg = `🔔 <b>Gentle Reminder: Bill Date Tomorrow</b>\n` +
+        `━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+        `Hello <b>${displayName}</b>,\n\n` +
+        `This is a gentle reminder that tomorrow is your official bill date for your TeleBot service.\n\n` +
+        `Please clear your bill tomorrow to keep your bot active and avoid your bot being turned off.\n\n` +
+        `🌐 <b>Dashboard:</b> ${webLoginUrl}\n` +
+        `━━━━━━━━━━━━━━━━━━━━━━━━━━`;
+    } else {
+      // 7th Day Bill Date Reminder (DUE AMOUNT ONLY - excluding whatever has already been paid)
+      if (balanceDue <= 0) {
+        return { ok: true, msg: `User "${u.username}" has no pending dues (₹0 due). All clear!` };
+      }
+
+      reminderMsg = `⚠️ <b>Action Required: Today is Your Bill Date</b>\n` +
+        `━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+        `Hello <b>${displayName}</b>,\n\n` +
+        `Today is your official bill date for your TeleBot service. Please clear your remaining due amount to keep your bot active.\n\n` +
+        `💰 <b>Pending Due Amount:</b> <b>${curr}${balanceDue.toLocaleString()}</b>\n\n` +
+        (adminUpi ? `💳 <b>Payment UPI ID:</b> <code>${adminUpi}</code>\n\n` : '') +
+        `Please clear your due amount today so your bot does not get turned off.\n` +
+        `If you have already paid, please share the payment screenshot with Admin.\n\n` +
+        `🌐 <b>Dashboard:</b> ${webLoginUrl}\n` +
+        `━━━━━━━━━━━━━━━━━━━━━━━━━━`;
+    }
+
+    const res = await sendTelegramMessage(targetBotToken, targetChatId, reminderMsg);
+    if (res && res.ok) {
+      const typeLabel = effectiveType === 'day6_gentle' ? '6th-day gentle reminder (no amount)' : `7th-day bill date reminder (Due: ${curr}${balanceDue})`;
+      return { ok: true, msg: `✅ ${typeLabel} sent in English to ${u.username} (Chat ID: ${targetChatId})!` };
+    }
+    return { ok: false, msg: `⚠️ Failed to dispatch Telegram message to ${u.username}.` };
   } catch (err: any) {
     return { ok: false, msg: err?.message || "Failed to dispatch reminder" };
   }
