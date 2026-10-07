@@ -28,7 +28,8 @@ if (current !== version) {
   for (const name of fs.readdirSync(appDir)) {
     const src = path.join(appDir, name);
     const dst = path.join(dataDir, name);
-    const isCode = name === 'server.mjs' || name.endsWith('.html') || name === 'sw.js' || name === 'icons' || name === 'manifest.json';
+    const isCode = name === 'server.mjs' || name === 'src' || name === 'node_modules' || name === 'package.json' ||
+      name.endsWith('.html') || name.endsWith('.mjs') || name === 'sw.js' || name === 'icons' || name === 'manifest.json';
     if (!isCode && fs.existsSync(dst)) continue;
     fs.cpSync(src, dst, { recursive: true, force: true });
   }
