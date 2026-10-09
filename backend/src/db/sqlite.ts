@@ -187,7 +187,6 @@ if (DatabaseSync) {
         sqliteDb.exec(`ALTER TABLE growth_campaigns ADD COLUMN ${col} ${colType};`);
             } catch (e) {
         // column already exists
-      }
     }
   }
 } else {
