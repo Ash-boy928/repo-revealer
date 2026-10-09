@@ -1,0 +1,8 @@
+build/
+.gradle/
+app/build/
+app/.cxx/
+app/src/main/assets/nodebot.zip
+app/src/main/jniLibs/
+app/src/main/cpp/libnode/
+local.properties
