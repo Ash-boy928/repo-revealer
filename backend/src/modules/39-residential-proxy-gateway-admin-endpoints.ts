@@ -56,7 +56,7 @@ app.post('/api/admin/proxy/save', (req, res) => {
     country: (data.country || '').trim().toLowerCase(),
     session_duration_mins: parseInt(data.session_duration_mins, 10) || 30,
     auto_sticky_per_phone: data.auto_sticky_per_phone !== false
-  };
+  });
 
   saveMasterProxyConfig();
   res.json({
