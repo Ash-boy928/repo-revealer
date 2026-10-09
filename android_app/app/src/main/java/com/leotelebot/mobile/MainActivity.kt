@@ -37,15 +37,35 @@ class MainActivity : AppCompatActivity() {
 
         BotService.start(this)
 
-        web = WebView(this)
+                web = WebView(this)
         web.settings.javaScriptEnabled = true
         web.settings.domStorageEnabled = true
+        web.settings.databaseEnabled = true
+        web.settings.useWideViewPort = true
+        web.settings.loadWithOverviewMode = true
+
+        var retries = 0
+        val maxRetries = 40 // 40 seconds max wait for first boot
+
         web.webViewClient = object : WebViewClient() {
             override fun onReceivedError(v: WebView, req: WebResourceRequest, err: WebResourceError) {
-                // Bot still starting: retry until the dashboard answers
                 if (req.isForMainFrame) {
-                    v.loadData("<body style='background:#0b0f19;color:#ccc;font-family:sans-serif;text-align:center;padding-top:40vh'>Starting bot engine…</body>", "text/html", "utf-8")
-                    handler.postDelayed({ v.loadUrl(url) }, 1500)
+                    retries++
+                    val html = """
+                        <!DOCTYPE html>
+                        <html>
+                        <head><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+                        <body style="background:#0b0f19;color:#fff;font-family:system-ui,-apple-system,sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;margin:0;padding:20px;box-sizing:border-box;text-align:center">
+                          <div style="width:48px;height:48px;border:3px solid #334155;border-top-color:#38bdf8;border-radius:50%;animation:spin 1s linear infinite;margin-bottom:20px"></div>
+                          <h2 style="font-size:20px;font-weight:600;margin:0 0 8px 0;color:#f8fafc">Starting LeoTeleBot Engine</h2>
+                          <p style="font-size:14px;color:#94a3b8;margin:0 0 16px 0">Starting local server on device... (${'$'}retries s)</p>
+                          ${if (retries > 15) """<button onclick="location.reload()" style="background:#0284c7;color:white;border:none;padding:10px 20px;border-radius:8px;font-weight:600;font-size:14px">Retry Now</button>""" else ""}
+                          <style>@keyframes spin { to { transform: rotate(360deg); } }</style>
+                        </body>
+                        </html>
+                    """.trimIndent()
+                    v.loadDataWithBaseURL(null, html, "text/html", "utf-8", null)
+                    handler.postDelayed({ v.loadUrl(url) }, 1000)
                 }
             }
             override fun shouldOverrideUrlLoading(v: WebView, req: WebResourceRequest): Boolean {
@@ -57,6 +77,7 @@ class MainActivity : AppCompatActivity() {
         }
         setContentView(web)
         web.loadUrl(url)
+        
     }
 
     @Deprecated("Deprecated in Java")
