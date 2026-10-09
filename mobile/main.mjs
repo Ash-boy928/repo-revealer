@@ -37,5 +37,15 @@ if (current !== version) {
   console.log(`[MOBILE] bundle ${version} installed to ${dataDir}`);
 }
 
+console.log(`[MOBILE] Starting LeoTeleBot server from ${dataDir}...`);
 process.chdir(dataDir);
-await import(pathToFileURL(path.join(dataDir, 'server.mjs')).href);
+
+try {
+  await import(pathToFileURL(path.join(dataDir, 'server.mjs')).href);
+  console.log('[MOBILE] server.mjs loaded successfully');
+} catch (err) {
+  console.error('[MOBILE CRITICAL] Failed to launch server.mjs:', err);
+  // Keep process alive so log can be inspected
+  setInterval(() => {}, 10000);
+}
+
