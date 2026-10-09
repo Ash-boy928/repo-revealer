@@ -4,10 +4,17 @@ import { SQLITE_DB_FILE } from '../config/constants.ts';
 // ---------------- SQLITE CORRUPTION-PROOF DATABASE ENGINE (WAL MODE) ----------------
 export let sqliteDb: any = null;
 
+let DatabaseSync: any = null;
 try {
-  const { DatabaseSync } = await import('node:sqlite');
-  if (DatabaseSync) {
-    const initDb = () => {
+  // Dynamic import inside safe catch so Node 18 doesn't crash
+  const mod = await import('node:sqlite').catch(() => null);
+  DatabaseSync = mod?.DatabaseSync || null;
+} catch (e) {
+  DatabaseSync = null;
+}
+
+if (DatabaseSync) {
+  
       sqliteDb = new DatabaseSync(SQLITE_DB_FILE);
       sqliteDb.exec('PRAGMA journal_mode = WAL;');
       sqliteDb.exec('PRAGMA synchronous = NORMAL;');
