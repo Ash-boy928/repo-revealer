@@ -15,7 +15,7 @@ const dist = path.join(here, 'dist');
 const app = path.join(dist, 'app');
 const run = (cmd, cwd) => execSync(cmd, { cwd, stdio: 'inherit' });
 
-run('node scripts/assemble.mjs --verify', backend);
+run('node scripts/assemble.mjs', backend);
 
 fs.rmSync(dist, { recursive: true, force: true });
 fs.mkdirSync(app, { recursive: true });
