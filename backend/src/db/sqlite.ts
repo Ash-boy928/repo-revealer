@@ -6,7 +6,6 @@ export let sqliteDb: any = null;
 
 let DatabaseSync: any = null;
 try {
-  // Dynamic import inside safe catch so Node 18 doesn't crash
   const mod = await import('node:sqlite').catch(() => null);
   DatabaseSync = mod?.DatabaseSync || null;
 } catch (e) {
@@ -14,26 +13,27 @@ try {
 }
 
 if (DatabaseSync) {
-  
-      sqliteDb = new DatabaseSync(SQLITE_DB_FILE);
-      sqliteDb.exec('PRAGMA journal_mode = WAL;');
-      sqliteDb.exec('PRAGMA synchronous = NORMAL;');
-    };
+  const initDb = () => {
+    sqliteDb = new DatabaseSync(SQLITE_DB_FILE);
+    sqliteDb.exec('PRAGMA journal_mode = WAL;');
+    sqliteDb.exec('PRAGMA synchronous = NORMAL;');
+  };
 
+  try {
+    initDb();
+    console.log('[DATABASE] SQLite WAL Engine activated successfully (telebot.db).');
+  } catch (openErr: any) {
+    console.warn('[DATABASE] SQLite initial open failed (stale WAL/SHM detected), self-healing...', openErr?.message);
     try {
-      initDb();
-      console.log('[DATABASE] SQLite WAL Engine activated successfully (telebot.db).');
-    } catch (openErr: any) {
-      console.warn('[DATABASE] SQLite initial open failed (stale WAL/SHM detected), self-healing...', openErr?.message);
-      try {
-        if (sqliteDb && typeof sqliteDb.close === 'function') sqliteDb.close();
-      } catch {}
-      sqliteDb = null;
-      try { if (fs.existsSync(SQLITE_DB_FILE + '-wal')) fs.unlinkSync(SQLITE_DB_FILE + '-wal'); } catch {}
-      try { if (fs.existsSync(SQLITE_DB_FILE + '-shm')) fs.unlinkSync(SQLITE_DB_FILE + '-shm'); } catch {}
-      initDb();
-      console.log('[DATABASE] SQLite self-healing successful! WAL Engine activated (telebot.db).');
-    }
+      if (sqliteDb && typeof sqliteDb.close === 'function') sqliteDb.close();
+    } catch {}
+    sqliteDb = null;
+    try { if (fs.existsSync(SQLITE_DB_FILE + '-wal')) fs.unlinkSync(SQLITE_DB_FILE + '-wal'); } catch {}
+    try { if (fs.existsSync(SQLITE_DB_FILE + '-shm')) fs.unlinkSync(SQLITE_DB_FILE + '-shm'); } catch {}
+    initDb();
+    console.log('[DATABASE] SQLite self-healing successful! WAL Engine activated (telebot.db).');
+  }
+  
 
     sqliteDb.exec(`
       CREATE TABLE IF NOT EXISTS users (
@@ -185,14 +185,15 @@ if (DatabaseSync) {
     for (const [col, colType] of newGrowthCols) {
       try {
         sqliteDb.exec(`ALTER TABLE growth_campaigns ADD COLUMN ${col} ${colType};`);
-      } catch (e) {
+            } catch (e) {
         // column already exists
       }
     }
   }
-} catch (err: any) {
+} else {
   console.log('[DATABASE] Native SQLite not available on this Node runtime, using Atomic Lock Storage.');
 }
+
 
 /**
  * Safe KV Store Get helper
