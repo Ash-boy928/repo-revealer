@@ -15,13 +15,19 @@ import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.appcompat.app.AppCompatActivity
+import java.io.File
+import java.net.HttpURLConnection
+import java.net.URL
+import kotlin.concurrent.thread
 
-/** Shows the bot's own dashboard (http://127.0.0.1:3000) inside the app. */
+/** Shows the bot's dashboard (http://127.0.0.1:3000) or logs if booting/errored. */
 class MainActivity : AppCompatActivity() {
 
     private lateinit var web: WebView
-    private val url = "http://127.0.0.1:${BotService.PORT}/"
+    private val botUrl = "http://127.0.0.1:${BotService.PORT}/"
     private val handler = Handler(Looper.getMainLooper())
+    private var isConnected = false
+    private var pollCount = 0
 
     @SuppressLint("SetJavaScriptEnabled", "BatteryLife")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -37,35 +43,23 @@ class MainActivity : AppCompatActivity() {
 
         BotService.start(this)
 
-                web = WebView(this)
+        web = WebView(this)
         web.settings.javaScriptEnabled = true
         web.settings.domStorageEnabled = true
         web.settings.databaseEnabled = true
         web.settings.useWideViewPort = true
         web.settings.loadWithOverviewMode = true
 
-        var retries = 0
-        val maxRetries = 40 // 40 seconds max wait for first boot
-
         web.webViewClient = object : WebViewClient() {
             override fun onReceivedError(v: WebView, req: WebResourceRequest, err: WebResourceError) {
-                if (req.isForMainFrame) {
-                    retries++
-                    val html = """
-                        <!DOCTYPE html>
-                        <html>
-                        <head><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
-                        <body style="background:#0b0f19;color:#fff;font-family:system-ui,-apple-system,sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;margin:0;padding:20px;box-sizing:border-box;text-align:center">
-                          <div style="width:48px;height:48px;border:3px solid #334155;border-top-color:#38bdf8;border-radius:50%;animation:spin 1s linear infinite;margin-bottom:20px"></div>
-                          <h2 style="font-size:20px;font-weight:600;margin:0 0 8px 0;color:#f8fafc">Starting LeoTeleBot Engine</h2>
-                          <p style="font-size:14px;color:#94a3b8;margin:0 0 16px 0">Starting local server on device... (${'$'}retries s)</p>
-                          ${if (retries > 15) """<button onclick="location.reload()" style="background:#0284c7;color:white;border:none;padding:10px 20px;border-radius:8px;font-weight:600;font-size:14px">Retry Now</button>""" else ""}
-                          <style>@keyframes spin { to { transform: rotate(360deg); } }</style>
-                        </body>
-                        </html>
-                    """.trimIndent()
-                    v.loadDataWithBaseURL(null, html, "text/html", "utf-8", null)
-                    handler.postDelayed({ v.loadUrl(url) }, 1000)
+                if (req.isForMainFrame && !isConnected) {
+                    showStatusPage()
+                }
+            }
+            override fun onPageFinished(view: WebView?, url: String?) {
+                super.onPageFinished(view, url)
+                if (url != null && (url.startsWith("http://127.0.0.1") || url.startsWith("http://localhost"))) {
+                    isConnected = true
                 }
             }
             override fun shouldOverrideUrlLoading(v: WebView, req: WebResourceRequest): Boolean {
@@ -75,13 +69,88 @@ class MainActivity : AppCompatActivity() {
                 return true
             }
         }
+
         setContentView(web)
-        web.loadUrl(url)
-        
+        showStatusPage()
+        startServerPoller()
+    }
+
+    private fun readBootLog(): String {
+        return try {
+            val logFile = File(filesDir, "leo/boot.log")
+            if (logFile.exists()) logFile.readText().takeLast(3000) else "Waiting for Node process to write boot logs..."
+        } catch (e: Exception) {
+            "Error reading log: ${e.message}"
+        }
+    }
+
+    private fun showStatusPage() {
+        if (isConnected) return
+        val logs = readBootLog()
+            .replace("&", "&amp;")
+            .replace("<", "&lt;")
+            .replace(">", "&gt;")
+
+        val html = """
+            <!DOCTYPE html>
+            <html>
+            <head>
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <style>
+                body { background: #0b0f19; color: #f8fafc; font-family: -apple-system, system-ui, sans-serif; margin: 0; padding: 20px; }
+                .spinner { width: 36px; height: 36px; border: 3px solid #334155; border-top-color: #38bdf8; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 16px auto; }
+                h2 { font-size: 18px; margin: 0 0 6px 0; text-align: center; }
+                p { font-size: 13px; color: #94a3b8; text-align: center; margin: 0 0 16px 0; }
+                .console { background: #020617; border: 1px solid #1e293b; border-radius: 8px; padding: 12px; font-family: monospace; font-size: 11px; color: #38bdf8; white-space: pre-wrap; word-break: break-all; max-height: 50vh; overflow-y: auto; }
+                .btn { display: block; width: 100%; box-sizing: border-box; background: #0284c7; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: 600; font-size: 14px; margin-top: 16px; cursor: pointer; text-align: center; }
+                @keyframes spin { to { transform: rotate(360deg); } }
+              </style>
+            </head>
+            <body>
+              <div class="spinner"></div>
+              <h2>Starting LeoTeleBot Engine</h2>
+              <p>Initializing local engine on this device... ($pollCount s)</p>
+              <div class="console">$logs</div>
+              <button class="btn" onclick="location.reload()">Refresh Status</button>
+            </body>
+            </html>
+        """.trimIndent()
+
+        web.loadDataWithBaseURL(null, html, "text/html", "utf-8", null)
+    }
+
+    private fun startServerPoller() {
+        thread {
+            while (!isConnected && !isFinishing) {
+                pollCount += 2
+                var serverUp = false
+                try {
+                    val conn = URL(botUrl).openConnection() as HttpURLConnection
+                    conn.connectTimeout = 1200
+                    conn.readTimeout = 1200
+                    conn.requestMethod = "GET"
+                    val code = conn.responseCode
+                    if (code in 200..399) {
+                        serverUp = true
+                    }
+                    conn.disconnect()
+                } catch (_: Exception) {}
+
+                handler.post {
+                    if (serverUp && !isConnected) {
+                        isConnected = true
+                        web.loadUrl(botUrl)
+                    } else if (!isConnected) {
+                        showStatusPage()
+                    }
+                }
+                Thread.sleep(2000)
+            }
+        }
     }
 
     @Deprecated("Deprecated in Java")
     override fun onBackPressed() {
-        if (web.canGoBack()) web.goBack() else moveTaskToBack(true) // keep bot running
+        if (web.canGoBack()) web.goBack() else moveTaskToBack(true)
     }
 }
