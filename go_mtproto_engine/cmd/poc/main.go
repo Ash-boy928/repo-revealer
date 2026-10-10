@@ -101,6 +101,9 @@ func main() {
 	maxDelay := flag.Duration("max-delay", 45*time.Second, "max delay between DMs")
 	dryRun := flag.Bool("dry-run", false, "only list stream participants, send nothing")
 	spamCheck := flag.Bool("spamcheck", false, "check @SpamBot status before running")
+	storeFile := flag.String("store", "dm_history.json", "remembers DMed/skipped users so nobody gets a 2nd DM")
+	wait := flag.Duration("wait", 0, "with -stream auto: keep re-scanning this long until a live stream starts (e.g. 30m)")
+	runFor := flag.Duration("timeout", 2*time.Hour, "max total run time")
 	flag.Parse()
 	if *maxDelay < *minDelay {
 		*maxDelay = *minDelay
@@ -143,7 +146,7 @@ func main() {
 		NoUpdates:      true, // POC: no update stream = lower RAM
 	})
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
+	ctx, cancel := context.WithTimeout(context.Background(), *runFor)
 	defer cancel()
 
 	err = client.Run(ctx, func(ctx context.Context) error {
@@ -186,19 +189,38 @@ func main() {
 			var users []engine.Participant
 			if *stream == "auto" {
 				log.Print("auto-detecting live stream in joined channels/groups...")
-				name, u, err := engine.AutoDetectLiveStream(ctx, client.API(), *limit, self.ID)
+				deadline := time.Now().Add(*wait)
+				var name string
+				var u []engine.Participant
+				for {
+					name, u, err = engine.AutoDetectLiveStream(ctx, client.API(), *limit*3, self.ID)
+					if err == nil || time.Now().After(deadline) {
+						break
+					}
+					log.Printf("no live stream yet, re-scan in 60s (%v)", err)
+					time.Sleep(60 * time.Second)
+				}
 				if err != nil {
 					return err
 				}
 				log.Printf("live stream detected: %s", name)
 				users = u
 			} else {
-				u, err := engine.ScrapeLiveStream(ctx, client.API(), *stream, *limit, self.ID)
+				u, err := engine.ScrapeLiveStream(ctx, client.API(), *stream, *limit*3, self.ID)
 				if err != nil && len(u) == 0 {
 					return err
 				}
 				users = u
 			}
+			store := engine.OpenStore(*storeFile)
+			fresh := users[:0]
+			for _, u := range users {
+				if !store.Has(u.ID) && len(fresh) < *limit {
+					fresh = append(fresh, u)
+				}
+			}
+			log.Printf("history: %d already DMed/skipped users filtered out", len(users)-len(fresh))
+			users = fresh
 			log.Printf("live stream %s: %d DM-able participants", *stream, len(users))
 			for i, u := range users {
 				log.Printf("  #%d id=%d @%s %s", i+1, u.ID, u.Username, u.FirstName)
@@ -222,6 +244,7 @@ func main() {
 				}
 				if r := engine.SkipReason(err); r != "" {
 					skipped++
+					store.Mark(u.ID, r)
 					log.Printf("  [SKIP] id=%d @%s: %s — next user, no delay", u.ID, u.Username, r)
 					continue
 				}
@@ -230,6 +253,7 @@ func main() {
 					log.Printf("  skip id=%d: %v", u.ID, err)
 				} else {
 					sent++
+					store.Mark(u.ID, "sent")
 					log.Printf("  DM %d/%d sent to id=%d @%s: %q", sent, len(users), u.ID, u.Username, txt)
 				}
 				if i < len(users)-1 {
